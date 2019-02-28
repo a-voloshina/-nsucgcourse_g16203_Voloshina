@@ -2,105 +2,186 @@ package ru.nsu.fit.g16203.voloshina.view;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.security.InvalidParameterException;
 
 public class MainFrame extends JFrame {
 
-    public static void main(String[] args) {
-        MainFrame mainFrame = new MainFrame();
-        mainFrame.createMainFrame();
+    private JMenuBar menuBar;
+    private JToolBar toolBar;
+
+    public MainFrame() throws HeadlessException {
+        try {
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+        } catch (Exception ignored) {
+        }
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        menuBar = new JMenuBar();
+        setJMenuBar(menuBar);
+        toolBar = new JToolBar("Main toolbar");
+        toolBar.setRollover(true);
+        add(toolBar, BorderLayout.PAGE_START);
     }
 
-    public void createMainFrame() {
-        JFrame frame = new JFrame("FIT_16203_Voloshina_Life");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        Font font = new Font("TimesNewRoman", Font.PLAIN, 14);
-
-        JMenuBar menuBar = new JMenuBar();
-
-        JMenu fileMenu = createMenu(font, " File ");
-        createMenuItem(font, "    New  ", fileMenu);
-        createMenuItem(font, "    Open  ", fileMenu);
-        createMenuItem(font, "    Save  ", fileMenu);
-        createMenuItem(font, "    Save as...  ", fileMenu);
-        fileMenu.addSeparator();
-        createMenuItem(font, "    Exit ", fileMenu);
-        menuBar.add(fileMenu);
-
-        JMenu editMenu = createMenu(font, "Edit");
-        JMenu modeEditMenu = createMenu(font, "    Mode  ");
-        editMenu.add(modeEditMenu);
-        createMenuItem(font, "    XOR  ", modeEditMenu);
-        createMenuItem(font, "    Replace ", modeEditMenu);
-        editMenu.addSeparator();
-        createMenuItem(font, "    Clear  ", editMenu);
-        editMenu.addSeparator();
-        createMenuItem(font, "    Settings  ", editMenu);
-        menuBar.add(editMenu);
-
-        JMenu viewMenu = createMenu(font, "View");
-        createMenuItem(font, "   Toolbar ", viewMenu);
-        createMenuItem(font, "   Status Bar ", viewMenu);
-        createMenuItem(font, "   Display Impact Values", viewMenu);
-        menuBar.add(viewMenu);
-
-        JMenu runMenu = createMenu(font, "Run");
-        createMenuItem(font, "    Run ", runMenu);
-        createMenuItem(font, "    Step ", runMenu);
-        menuBar.add(runMenu);
-
-        JMenu helpMenu = createMenu(font, "Help");
-        createMenuItem(font, "   About ", runMenu);
-        menuBar.add(helpMenu);
-
-        frame.setJMenuBar(menuBar);
-        createToolbar(frame);
-
-
-        frame.setPreferredSize(new Dimension(800, 600));
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
+    public MainFrame(int widthWindow, int heightWindow, String title) {
+        this();
+        setSize(widthWindow, heightWindow);
+        setTitle(title);
 
     }
 
-    private JMenu createMenu(Font font, String name) {
-        JMenu menu = new JMenu(name);
+    private Icon findIcon(String icon) {
+        return new ImageIcon(getClass().getResource("/" + icon));
+    }
+
+    public JMenuItem createMenuItem(String title,
+                                    String tooltip,
+                                    int mnemonic,
+                                    String icon,
+                                    Font font,
+                                    ActionListener actionMethod,
+                                    boolean checkBox) {
+        JMenuItem item;
+        if (checkBox) {
+            item = new JCheckBoxMenuItem(title);
+        } else {
+            item = new JMenuItem(title);
+        }
+        item.setMnemonic(mnemonic);
+        item.setToolTipText(tooltip);
+        item.setFont(font);
+        if (icon != null) {
+            item.setIcon(new ImageIcon(getClass().getResource("/" + icon), title));
+        }
+        if (actionMethod != null) {
+            item.addActionListener(actionMethod);
+        }
+        return item;
+    }
+
+    private JMenu createSubMenu(String title, Font font, int mnemonic) {
+        JMenu menu = new JMenu(title);
+        menu.setMnemonic(mnemonic);
         menu.setFont(font);
         return menu;
     }
 
-    private void createMenuItem(Font font, String itemName, JMenu menu) {
-        JMenuItem menuItem = new JMenuItem(itemName);
-        menuItem.setFont(font);
-        menu.add(menuItem);
+    private String getMenuPathName(String menuPath) {
+        int pos = menuPath.lastIndexOf('/');
+        if (pos > 0)
+            return menuPath.substring(pos + 1);
+        else
+            return menuPath;
     }
 
-    private void createToolbar(JFrame frame) {
-        JToolBar toolbar = new JToolBar();
+    private MenuElement getMenuElement(String menuPath) {
+        MenuElement element = menuBar;
+        for (String pathElement : menuPath.split("/")) {
+            MenuElement newElement = null;
+            for (MenuElement subElement : element.getSubElements()) {
+                if ((subElement instanceof JMenu && ((JMenu) subElement).getText().equals(pathElement))
+                        || (subElement instanceof JMenuItem && ((JMenuItem) subElement).getText().equals(pathElement))) {
+                    if (subElement.getSubElements().length == 1 && subElement.getSubElements()[0] instanceof JPopupMenu) {
+                        newElement = subElement.getSubElements()[0];
+                    } else {
+                        newElement = subElement;
+                    }
+                    break;
+                }
+            }
+            if (newElement == null) return null;
+            element = newElement;
+        }
+        return element;
+    }
 
-        JButton newButton = new JButton(new ImageIcon(this.getClass().getResource("/new-file.png")));
-        toolbar.add(newButton);
-        JButton openButton = new JButton(new ImageIcon(this.getClass().getResource("/open-file.png")));
-        toolbar.add(openButton);
-        JButton saveButton = new JButton(new ImageIcon(this.getClass().getResource("/save-file.png")));
-        toolbar.add(saveButton);
-        JButton settingsButton = new JButton(new ImageIcon(this.getClass().getResource("/settings.png")));
-        toolbar.add(settingsButton);
-        JButton XORButton = new JButton(new ImageIcon(this.getClass().getResource("/change.png")));
-        toolbar.add(XORButton);
-        JButton impactButton = new JButton(new ImageIcon(this.getClass().getResource("/impact.png")));
-        toolbar.add(impactButton);
-        JButton clearButton = new JButton(new ImageIcon(this.getClass().getResource("/cancel.png")));
-        toolbar.add(clearButton);
-        JButton nextButton = new JButton(new ImageIcon(this.getClass().getResource("/last.png")));
-        toolbar.add(nextButton);
-        JButton playButton = new JButton(new ImageIcon(this.getClass().getResource("/play.png")));
-        toolbar.add(playButton);
-        JButton helpButton = new JButton(new ImageIcon(this.getClass().getResource("/help.png")));
-        toolbar.add(helpButton);
+    private MenuElement getParentMenuElement(String menuPath) {
+        int pos = menuPath.lastIndexOf('/');
+        if (pos > 0)
+            return getMenuElement(menuPath.substring(0, pos));
+        else
+            return menuBar;
+    }
 
-        frame.add(toolbar, BorderLayout.NORTH);
+    public void addSubMenu(String title, Font font, int mnemonic) {
+        MenuElement element = getParentMenuElement(title);
+        if (element == null)
+            throw new InvalidParameterException("Menu path not found: " + title);
+        JMenu subMenu = createSubMenu(getMenuPathName(title), font, mnemonic);
+        if (element instanceof JMenuBar)
+            ((JMenuBar) element).add(subMenu);
+        else if (element instanceof JMenu)
+            ((JMenu) element).add(subMenu);
+        else if (element instanceof JPopupMenu)
+            ((JPopupMenu) element).add(subMenu);
+        else
+            throw new InvalidParameterException("Invalid menu path: " + title);
+    }
+
+    public void addMenuItem(String title,
+                            String tooltip,
+                            int mnemonic,
+                            String icon,
+                            Font font,
+                            ActionListener actionMethod,
+                            boolean checkBox) {
+        MenuElement element = getParentMenuElement(title);
+        if (element == null)
+            throw new InvalidParameterException("Menu path not found: " + title);
+        JMenuItem item = createMenuItem(getMenuPathName(title), tooltip, mnemonic, icon, font, actionMethod, checkBox);
+        if (element instanceof JMenu)
+            ((JMenu) element).add(item);
+        else if (element instanceof JPopupMenu)
+            ((JPopupMenu) element).add(item);
+        else
+            throw new InvalidParameterException("Invalid menu path: " + title);
+    }
+
+    public void addMenuSeparator(String title) {
+        MenuElement element = getMenuElement(title);
+        if (element == null)
+            throw new InvalidParameterException("Menu path not found: " + title);
+        if (element instanceof JMenu)
+            ((JMenu) element).addSeparator();
+        else if (element instanceof JPopupMenu)
+            ((JPopupMenu) element).addSeparator();
+        else
+            throw new InvalidParameterException("Invalid menu path: " + title);
+    }
+
+    private JButton createToolBarButton(JMenuItem item, String icon) {
+        JButton button;
+        if (icon != null) {
+            button = new JButton(findIcon(icon));
+        } else {
+            button = new JButton(item.getIcon());
+        }
+        button.setHorizontalTextPosition(JButton.CENTER);
+        button.setVerticalTextPosition(JButton.CENTER);
+        button.setMargin(new Insets(0, 0, 0, 0));
+        for (ActionListener listener : item.getActionListeners())
+            button.addActionListener(listener);
+        button.setToolTipText(item.getToolTipText());
+        return button;
+    }
+
+    private JButton createToolBarButton(String menuPath, String icon) {
+        JMenuItem item = (JMenuItem) getMenuElement(menuPath);
+        if (item == null)
+            throw new InvalidParameterException("Menu path not found: " + menuPath);
+        return createToolBarButton(item, icon);
+    }
+
+    public void addToolBarButton(String menuPath) {
+        toolBar.add(createToolBarButton(menuPath, null));
+    }
+
+    public void addToolBarButton(String menuPath, String icon) {
+        toolBar.add(createToolBarButton(menuPath, icon));
+    }
+
+    public void addToolBarSeparator() {
+        toolBar.addSeparator();
     }
 
 }
