@@ -12,6 +12,15 @@ public class CellField extends Field<CellStatus> {
         setItem(coordinateX, coordinateY, CellStatus.ALIVE);
     }
 
+    public void reverseCellState(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
+        CellStatus cell = getItem(coordinateX, coordinateY);
+        if (cell == CellStatus.ALIVE) {
+            setItem(coordinateX, coordinateY, CellStatus.DEAD);
+        } else if (cell == CellStatus.DEAD) {
+            setItem(coordinateX, coordinateY, CellStatus.ALIVE);
+        }
+    }
+
     @Override
     public void printField() {
         for (int i = 0; i < height; i++) {

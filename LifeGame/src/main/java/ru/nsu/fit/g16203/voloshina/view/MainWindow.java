@@ -1,14 +1,30 @@
 package ru.nsu.fit.g16203.voloshina.view;
 
+import ru.nsu.fit.g16203.voloshina.controller.Controller;
+import ru.nsu.fit.g16203.voloshina.controller.IController;
+
 import java.awt.*;
 import java.awt.event.KeyEvent;
 
 public class MainWindow extends MainFrame {
 
+    private Controller controller;
+    private FieldView fieldView;
+
+    private int n = 10;
+    private int m = 10;
+
+
     public MainWindow() {
         super(800, 600, "FIT_16203_Voloshina_Life");
         customizeMenu();
         customizeToolbar();
+
+        controller = new Controller(n, m);
+        fieldView = new FieldView(n, m, controller);
+
+        add(fieldView);
+
         setVisible(true);
     }
 

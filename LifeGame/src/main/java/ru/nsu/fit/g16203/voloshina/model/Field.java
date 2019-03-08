@@ -13,6 +13,14 @@ public class Field<T> {
 
     private int defaultFieldSize = 10;
 
+    public int getWidth(int curHeight) {
+        return checkWidth(width, curHeight);
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
     Field(int width, int height, T initialValue) {
         setWidth(width);
         setHeight(height);
@@ -44,6 +52,24 @@ public class Field<T> {
         }
     }
 
+    public T getItem(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
+        int width = checkWidth(this.width, coordinateY);
+        if (coordinateX < width && coordinateX >= 0 && coordinateY < height && coordinateY >= 0) {
+            return field.get(coordinateY).get(coordinateX);
+        } else {
+            throw new OutOfFieldRangeException(coordinateX, coordinateY, width, height);
+        }
+    }
+
+    public void updateField(IMyFunc<T> fn) throws OutOfFieldRangeException {
+        for (int i = 0; i < height; i++) {
+            int end = checkWidth(width, i);
+            for (int j = 0; j < end; j++) {
+                field.get(i).set(j, fn.updateFieldItem(j, i));
+            }
+        }
+    }
+
     public void setItem(int coordinateX, int coordinateY, T item) throws OutOfFieldRangeException {
         int width = checkWidth(this.width, coordinateY);
         if (coordinateX < width && coordinateX >= 0 && coordinateY < height && coordinateY >= 0) {
@@ -53,12 +79,12 @@ public class Field<T> {
         }
     }
 
-    public T getItem(int coordinateX, int coordinateY) {
-        int width = checkWidth(this.width, coordinateY);
-        if (coordinateX < width && coordinateX >= 0 && coordinateY < height && coordinateY >= 0) {
-            return field.get(coordinateY).get(coordinateX);
-        } else {
-            return null;
+    public void _printField(IUpdate fn) {
+        for (int i = 0; i < height; i++) {
+            int curWidth = checkWidth(width, i);
+            for (int j = 0; j < curWidth; j++) {
+                fn.printFieldItem(j, i);
+            }
         }
     }
 
@@ -66,13 +92,8 @@ public class Field<T> {
         return (height % 2 == 0) ? width : width - 1;
     }
 
-    public void updateField(IMyFunc<T> fn) {
-        for (int i = 0; i < height; i++) {
-            int end = checkWidth(width, i);
-            for (int j = 0; j < end; j++) {
-                field.get(i).set(j, fn.updateFieldItem(j, i));
-            }
-        }
+    public interface IMyFunc<T> {
+        T updateFieldItem(int x, int y) throws OutOfFieldRangeException;
     }
 
     public void printField() {
@@ -83,6 +104,10 @@ public class Field<T> {
             }
             System.out.println();
         }
+    }
+
+    public interface IUpdate {
+        void printFieldItem(int x, int y);
     }
 
     public void swap(Field<T> other) {
@@ -153,12 +178,6 @@ public class Field<T> {
                 field.get(i).set(j, initialValue);
             }
         }
-    }
-
-    public interface IMyFunc<T> {
-
-        T updateFieldItem(int x, int y);
-
     }
 
 }

@@ -10,7 +10,12 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class Controller {
+public class Controller implements IController {
+
+    public Double getLIVE_BEGIN() {
+        return LIVE_BEGIN;
+    }
+
     private CellField oldCellField;
     private CellField curCellField;
     private ImpactField oldImpactField;
@@ -51,6 +56,7 @@ public class Controller {
         add(new Pair<>(1, 2));
         add(new Pair<>(2, 0));
     }};
+
     private Double LIVE_BEGIN = 2.0;
     private Double LIVE_END = 3.3;
     private Double BIRTH_BEGIN = 2.3;
@@ -65,19 +71,65 @@ public class Controller {
         this.curCellField = new CellField(width, height);
     }
 
-    public void setStartCell(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
-        oldCellField.addAliveCell(coordinateX, coordinateY);
+    public void setLIVE_BEGIN(Double LIVE_BEGIN) {
+        this.LIVE_BEGIN = LIVE_BEGIN;
+    }
+
+    public Double getLIVE_END() {
+        return LIVE_END;
+    }
+
+    public void setLIVE_END(Double LIVE_END) {
+        this.LIVE_END = LIVE_END;
+    }
+
+    public Double getBIRTH_BEGIN() {
+        return BIRTH_BEGIN;
+    }
+
+    public void setBIRTH_BEGIN(Double BIRTH_BEGIN) {
+        this.BIRTH_BEGIN = BIRTH_BEGIN;
+    }
+
+    public Double getBIRTH_END() {
+        return BIRTH_END;
+    }
+
+    public void setBIRTH_END(Double BIRTH_END) {
+        this.BIRTH_END = BIRTH_END;
+    }
+
+    public Double getFST_IMPACT() {
+        return FST_IMPACT;
+    }
+
+    public void setFST_IMPACT(Double FST_IMPACT) {
+        this.FST_IMPACT = FST_IMPACT;
+    }
+
+    public Double getSND_IMPACT() {
+        return SND_IMPACT;
+    }
+
+    public void setSND_IMPACT(Double SND_IMPACT) {
+        this.SND_IMPACT = SND_IMPACT;
     }
 
     private void countImpacts() {
-        curImpactField.updateField(this::countCurrentCellImpact);
+        try {
+            curImpactField.updateField(this::countCurrentCellImpact);
+        } catch (OutOfFieldRangeException ignored) {
+        }
     }
 
     private void updateField() {
-        curCellField.updateField(this::updateCurCellStatus);
+        try {
+            curCellField.updateField(this::updateCurCellStatus);
+        } catch (OutOfFieldRangeException ignored) {
+        }
     }
 
-    private CellStatus updateCurCellStatus(int coordinateX, int coordinateY) {
+    private CellStatus updateCurCellStatus(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
         CellStatus status = oldCellField.getItem(coordinateX, coordinateY);
         double impact = curImpactField.getItem(coordinateX, coordinateY);
         if ((status == CellStatus.DEAD) && (impact >= BIRTH_BEGIN)
@@ -90,7 +142,7 @@ public class Controller {
         return status;
     }
 
-    private double countCurrentCellImpact(int coordinateX, int coordinateY) {
+    private double countCurrentCellImpact(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
         Pair<Integer, Integer> aliveNeighboursCount = new Pair<>(0, 0);
         if (coordinateY % 2 == 0) {
             getAliveNeighboursCount(aliveNeighboursCount,
@@ -107,7 +159,7 @@ public class Controller {
                                          ArrayList<Pair<Integer, Integer>> firstNeighboursImpact,
                                          ArrayList<Pair<Integer, Integer>> secondNeighboursImpact,
                                          int coordinateX,
-                                         int coordinateY) {
+                                         int coordinateY) throws OutOfFieldRangeException {
         int size = firstNeighboursImpact.size();
         int firstAliveNeighboursCount = 0;
         int secondAliveNeighboursCount = 0;
@@ -122,14 +174,37 @@ public class Controller {
     private int isNeighbourAlive(ArrayList<Pair<Integer, Integer>> neighboursImpact,
                                  int i,
                                  int coordinateX,
-                                 int coordinateY) {
+                                 int coordinateY) throws OutOfFieldRangeException {
         int neighbourCoordinateX = neighboursImpact.get(i).getValue() + coordinateX;
         int neighbourCoordinateY = neighboursImpact.get(i).getKey() + coordinateY;
         CellStatus neighbourState = oldCellField.getItem(neighbourCoordinateX, neighbourCoordinateY);
         if (neighbourState == CellStatus.ALIVE) {
             return 1;
         }
-        return 0;    //TODO: Integer???????????????
+        return 0;
+    }
+
+    public void setAliveCell(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
+        oldCellField.addAliveCell(coordinateX, coordinateY);
+    }
+
+    @Override
+    public void reverseCellState(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
+        oldCellField.reverseCellState(coordinateX, coordinateY);
+    }
+
+    @Override
+    public CellStatus getCellStatus(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
+        return curCellField.getItem(coordinateX, coordinateY);
+    }
+
+    @Override
+    public Double getCellImpact(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
+        return curImpactField.getItem(coordinateX, coordinateY);
+    }
+
+    public interface IModifyField<T> {
+        T fieldModified(int x, int y);
     }
 
     public void next() {
