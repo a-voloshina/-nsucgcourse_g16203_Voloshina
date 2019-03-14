@@ -1,7 +1,10 @@
 package ru.nsu.fit.g16203.voloshina.controller;
 
+import ru.nsu.fit.g16203.voloshina.general.Pair;
 import ru.nsu.fit.g16203.voloshina.general.exception.OutOfFieldRangeException;
 import ru.nsu.fit.g16203.voloshina.model.CellStatus;
+
+import java.util.ArrayList;
 
 public interface IController {
 
@@ -12,6 +15,8 @@ public interface IController {
     CellStatus getCellStatus(int coordinateX, int coordinateY);
 
     Double getCellImpact(int coordinateX, int coordinateY);
+
+    public ArrayList<Pair<Integer, Integer>> getAliveCells();
 
     int getFieldCurWidth(int curHeight);
 

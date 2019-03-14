@@ -44,6 +44,12 @@ public class FieldView extends JPanel {
     private boolean isImpactsShown = false;
     private Pair<Integer, Integer> curHexagon = new Pair<>(-1, -1);
 
+    private int rowsMax = 100;
+    private int columnsMax = 100;
+    private int cellSizeMax = 50;
+    private int gridWidthMax = 10;
+    private int timerMax = 10000;
+
     private IController controller;
 
     public FieldView(IController iController) {
@@ -60,8 +66,8 @@ public class FieldView extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int x = e.getX() - indent;                     //TODO: add indent!!
-                int y = e.getY() - indent;                     //TODO: add indent!!
+                int x = e.getX();
+                int y = e.getY();
                 hexagonUpdate(x, y, false);
             }
         });
@@ -69,8 +75,8 @@ public class FieldView extends JPanel {
         addMouseMotionListener(new MouseMotionListener() {
             @Override
             public void mouseDragged(MouseEvent e) {
-                int x = e.getX() - indent;                     //TODO: add indent!!
-                int y = e.getY() - indent;                     //TODO: add indent!!
+                int x = e.getX();
+                int y = e.getY();
                 hexagonUpdate(x, y, true);
             }
 
@@ -79,9 +85,6 @@ public class FieldView extends JPanel {
 
             }
         });
-
-        //image.getGraphics().setColor(new Color(0, 0, 0, 0));
-        //image.getGraphics().fillRect(0, 0, image.getCurWidth(), image.getHeight());
         printField();
     }
 
@@ -97,14 +100,16 @@ public class FieldView extends JPanel {
     }
 
     private int countPixelFieldWidth() {
-        return (int) Math.round(2 * r * fieldWidth) + indent * 2;                     //TODO: add indent!!
+        return (int) Math.round(2 * r * fieldWidth) + indent * 2;
     }
 
     private int countPixelFieldHeight() {
-        return (int) Math.round(cellSize * (0.5 + 1.5 * fieldHeight)) + indent * 2;                     //TODO: add indent!!
+        return (int) Math.round(cellSize * (0.5 + 1.5 * fieldHeight)) + indent * 2;
     }
 
     private void hexagonUpdate(int x, int y, boolean isDragged) {
+        x = x - indent;
+        y = y - indent;
         if (x < 0 || x > pixelFieldWidth - indent * 2 || y < 0 || y > pixelFieldHeight - indent * 2) {
             return;
         }
@@ -127,13 +132,6 @@ public class FieldView extends JPanel {
                     oldColor = hexagonColors.getKey();
                     newColor = hexagonColors.getValue();
                     controller.reverseCellState(position.getValue(), position.getKey());
-//                    if(oldColor == hexagonDeadColor.getRGB()){
-//                        newColor = hexagonAliveColor.getRGB();
-//                    } else if (oldColor == hexagonAliveColor.getRGB()){
-//                        newColor = hexagonDeadColor.getRGB();
-//                    } else {
-//                        return;
-//                    }
                 } else {
                     controller.setAliveCell(position.getValue(), position.getKey());
                     oldColor = hexagonDeadColor.getRGB();
@@ -213,7 +211,6 @@ public class FieldView extends JPanel {
         } else {
             g.setStroke(new BasicStroke(gridWidth));
             g.drawLine(x0, y0, x1, y1);
-            //image.getGraphics().drawLine(x0, y0, x1, y1);
         }
     }
 
@@ -236,7 +233,7 @@ public class FieldView extends JPanel {
     private Pair<Double, Double> countHexagonCenter(int x, int y) {
         double centerX = (y % 2 == 0) ? (2 * x + 1) * r : 2 * (x + 1) * r;
         double centerY = cellSize * (1 + 1.5 * y);
-        return new Pair<>(centerX + indent, centerY + indent);                  //TODO: add indent!!
+        return new Pair<>(centerX + indent, centerY + indent);
     }
 
     private void printField() {
@@ -397,7 +394,6 @@ public class FieldView extends JPanel {
         image = new BufferedImage(pixelFieldWidth, pixelFieldHeight, BufferedImage.TYPE_INT_ARGB);
         printField();
         updateFieldContent();
-//        repaint();
     }
 
     private int calculateFontSize() {
@@ -414,15 +410,17 @@ public class FieldView extends JPanel {
     }
 
     public void setCellSize(int cellSize) {
-        this.cellSize = cellSize;
-        r = countInnerHexagonRadius();
-        pixelFieldWidth = countPixelFieldWidth();
-        pixelFieldHeight = countPixelFieldHeight();
-        updateFieldCondition();
-        if (isImpactsShown) {
-            repaintImpacts();
-        } else {
-            repaint();
+        if (cellSize <= cellSizeMax) {
+            this.cellSize = cellSize;
+            r = countInnerHexagonRadius();
+            pixelFieldWidth = countPixelFieldWidth();
+            pixelFieldHeight = countPixelFieldHeight();
+            updateFieldCondition();
+            if (isImpactsShown) {
+                repaintImpacts();
+            } else {
+                repaint();
+            }
         }
     }
 
@@ -431,14 +429,16 @@ public class FieldView extends JPanel {
     }
 
     public void setGridWidth(int gridWidth) {
-        this.gridWidth = gridWidth;
-        pixelFieldWidth = countPixelFieldWidth();
-        pixelFieldHeight = countPixelFieldHeight();
-        updateFieldCondition();
-        if (isImpactsShown) {
-            repaintImpacts();
-        } else {
-            repaint();
+        if (gridWidth <= gridWidthMax) {
+            this.gridWidth = gridWidth;
+            pixelFieldWidth = countPixelFieldWidth();
+            pixelFieldHeight = countPixelFieldHeight();
+            updateFieldCondition();
+            if (isImpactsShown) {
+                repaintImpacts();
+            } else {
+                repaint();
+            }
         }
     }
 
@@ -447,7 +447,9 @@ public class FieldView extends JPanel {
     }
 
     public void setTimePeriod(int timePeriod) {
-        this.timePeriod = timePeriod;
+        if (timePeriod < timerMax) {
+            this.timePeriod = timePeriod;
+        }
     }
 
     public boolean isXORModeOn() {
@@ -494,11 +496,11 @@ public class FieldView extends JPanel {
 
     public void resizeField(int newWidth, int newHeight) {
         if (newWidth != fieldWidth || newHeight != fieldHeight) {
-            if (newWidth != fieldWidth) {
+            if (newWidth != fieldWidth && newWidth <= columnsMax) {
                 fieldWidth = newWidth;
                 pixelFieldWidth = countPixelFieldWidth();
             }
-            if (newHeight != fieldHeight) {
+            if (newHeight != fieldHeight && newHeight <= rowsMax) {
                 fieldHeight = newHeight;
                 pixelFieldHeight = countPixelFieldHeight();
             }
@@ -525,10 +527,16 @@ public class FieldView extends JPanel {
     public void hideImpacts() {
         isImpactsShown = false;
         impactsImage = new BufferedImage(pixelFieldWidth, pixelFieldHeight, BufferedImage.TYPE_INT_ARGB);
-        //impactsImage.getGraphics().setColor(backgroundColor);
-        //impactsImage.getGraphics().fillRect(0, 0, impactsImage.getWidth(), impactsImage.getHeight());
         repaint();
-        //updateFieldCondition();
+    }
+
+    public void updateField() {
+        updateFieldCondition();
+        if (isImpactsShown) {
+            repaintImpacts();
+        } else {
+            repaint();
+        }
     }
 
     class Step extends TimerTask {

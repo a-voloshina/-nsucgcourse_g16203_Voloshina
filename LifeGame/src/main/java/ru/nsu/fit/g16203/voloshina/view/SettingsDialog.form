@@ -51,7 +51,7 @@
                 </constraints>
                 <properties>
                   <labelFor value="62ab2"/>
-                  <text value="Colomns"/>
+                  <text value="Columns"/>
                 </properties>
               </component>
               <component id="5b550" class="javax.swing.JLabel" binding="cellSizeLabel">

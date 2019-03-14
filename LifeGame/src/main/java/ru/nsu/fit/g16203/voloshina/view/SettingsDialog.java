@@ -4,11 +4,9 @@ import javax.swing.*;
 import java.awt.event.ActionListener;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.util.Enumeration;
 
 public class SettingsDialog extends JDialog {
-    DecimalFormat df = new DecimalFormat("0.00");
     private JPanel contentPane;
     private JPanel Field;
     private JLabel rowsLabel;
@@ -275,12 +273,4 @@ public class SettingsDialog extends JDialog {
             modeButtonGroup.setSelected(replaceRadioButton.getModel(), true);
         }
     }
-
-//    public static void main(String[] args) {
-//        SettingsDialog dialog = new SettingsDialog();
-//        dialog.pack();
-//        dialog.setVisible(true);
-//        dialog.setResizable(false);
-//        System.exit(0);
-//    }
 }

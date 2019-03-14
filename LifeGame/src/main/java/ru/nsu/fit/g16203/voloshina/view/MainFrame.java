@@ -3,6 +3,7 @@ package ru.nsu.fit.g16203.voloshina.view;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
 
@@ -192,6 +193,14 @@ public class MainFrame extends JFrame {
 
     public void addToolBarSeparator() {
         toolBar.addSeparator();
+    }
+
+    public File getSaveFileName(String extension, String description) {
+        return FileUtils.getSaveFileName(this, extension, description);
+    }
+
+    public File getOpenFileName(String extension, String description) {
+        return FileUtils.getOpenFileName(this, extension, description);
     }
 
 }

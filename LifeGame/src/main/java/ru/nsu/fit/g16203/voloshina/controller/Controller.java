@@ -12,7 +12,6 @@ public class Controller implements IController {
 
     private CellField oldCellField;
     private CellField curCellField;
-    private ImpactField oldImpactField;
     private ImpactField curImpactField;
 
     private ArrayList<Pair<Integer, Integer>> evenLineFirstImpact = new ArrayList<Pair<Integer, Integer>>() {{
@@ -57,7 +56,6 @@ public class Controller implements IController {
 
     public Controller(int width, int height) {
         this.oldCellField = new CellField(width, height);
-        this.oldImpactField = new ImpactField(width, height);
         this.curImpactField = new ImpactField(width, height);
         this.curCellField = new CellField(width, height);
     }
@@ -173,34 +171,11 @@ public class Controller implements IController {
         return 0;
     }
 
-    private void recountNeighboursImpacts(int coordinateX, int coordinateY) {
-        ArrayList<Pair<Integer, Integer>> firstNeighboursImpact = coordinateY % 2 == 0 ? evenLineFirstImpact : oddLineFirstImpact;
-        ArrayList<Pair<Integer, Integer>> secondNeighboursImpact = coordinateY % 2 == 0 ? evenLineSecondImpact : oddLineSecondImpact;
-        int size = firstNeighboursImpact.size();
-        for (int i = 0; i < size; i++) {
-            int firstNeighbourCoordinateX = firstNeighboursImpact.get(i).getValue() + coordinateX;
-            int firstNeighbourCoordinateY = firstNeighboursImpact.get(i).getKey() + coordinateY;
-            int secondNeighbourCoordinateX = secondNeighboursImpact.get(i).getValue() + coordinateX;
-            int secondNeighbourCoordinateY = secondNeighboursImpact.get(i).getKey() + coordinateY;
-            try {
-                curImpactField.setItem(firstNeighbourCoordinateX, firstNeighbourCoordinateY,
-                        countCurrentCellImpact(firstNeighbourCoordinateX, firstNeighbourCoordinateY));
-            } catch (OutOfFieldRangeException ignored) {
-            }
-            try {
-                curImpactField.setItem(secondNeighbourCoordinateX, secondNeighbourCoordinateY,
-                        countCurrentCellImpact(secondNeighbourCoordinateX, secondNeighbourCoordinateY));
-            } catch (OutOfFieldRangeException ignored) {
-            }
-        }
-    }
-
     public void setAliveCell(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
         curCellField.addAliveCell(coordinateX, coordinateY);
         curImpactField.setItem(coordinateX, coordinateY, countCurrentCellImpact(coordinateX, coordinateY));
         countImpacts();
         curCellField.printField();
-        //recountNeighboursImpacts(coordinateX, coordinateY);
     }
 
     @Override
@@ -209,7 +184,6 @@ public class Controller implements IController {
         curImpactField.setItem(coordinateX, coordinateY, countCurrentCellImpact(coordinateX, coordinateY));
         countImpacts();
         curCellField.printField();
-        //recountNeighboursImpacts(coordinateX, coordinateY);
     }
 
     @Override
@@ -220,6 +194,11 @@ public class Controller implements IController {
     @Override
     public Double getCellImpact(int coordinateX, int coordinateY) {
         return curImpactField.getItem(coordinateX, coordinateY);
+    }
+
+    @Override
+    public ArrayList<Pair<Integer, Integer>> getAliveCells() {
+        return curCellField.getAliveCells();
     }
 
     @Override
@@ -238,7 +217,6 @@ public class Controller implements IController {
     }
 
     public void next() {
-        //oldImpactField.swap(curImpactField);
         oldCellField.swap(curCellField);
         updateField();
         countImpacts();
@@ -248,7 +226,6 @@ public class Controller implements IController {
     }
 
     public void resizeField(int newWidth, int newHeight) {
-        oldImpactField.resizeField(newWidth, newHeight);
         curImpactField.resizeField(newWidth, newHeight);
         oldCellField.resizeField(newWidth, newHeight);
         curCellField.resizeField(newWidth, newHeight);
@@ -257,7 +234,6 @@ public class Controller implements IController {
     public void clearField() {
         oldCellField.clearField();
         curCellField.clearField();
-        oldImpactField.clearField();
         curImpactField.clearField();
     }
 

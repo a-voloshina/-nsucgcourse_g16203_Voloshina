@@ -1,6 +1,9 @@
 package ru.nsu.fit.g16203.voloshina.model;
 
+import ru.nsu.fit.g16203.voloshina.general.Pair;
 import ru.nsu.fit.g16203.voloshina.general.exception.OutOfFieldRangeException;
+
+import java.util.ArrayList;
 
 public class CellField extends Field<CellStatus> {
 
@@ -34,5 +37,18 @@ public class CellField extends Field<CellStatus> {
             System.out.println();
         }
         System.out.println();
+    }
+
+    public ArrayList<Pair<Integer, Integer>> getAliveCells() {
+        ArrayList<Pair<Integer, Integer>> aliveCells = new ArrayList<>();
+        for (int i = 0; i < height; i++) {
+            int curWidth = checkWidth(width, i);
+            for (int j = 0; j < curWidth; j++) {
+                if (field.get(i).get(j) == CellStatus.ALIVE) {
+                    aliveCells.add(new Pair<>(j, i));
+                }
+            }
+        }
+        return aliveCells;
     }
 }

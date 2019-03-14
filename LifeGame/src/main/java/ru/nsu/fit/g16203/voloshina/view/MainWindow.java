@@ -1,12 +1,15 @@
 package ru.nsu.fit.g16203.voloshina.view;
 
 import ru.nsu.fit.g16203.voloshina.controller.Controller;
+import ru.nsu.fit.g16203.voloshina.general.Pair;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.*;
+import java.util.ArrayList;
 
 public class MainWindow extends MainFrame {
 
@@ -43,11 +46,11 @@ public class MainWindow extends MainFrame {
 
         addSubMenu("File", font, KeyEvent.VK_F);
         addMenuItem("File/New", "Create new file", KeyEvent.VK_N,
-                "new-file.png", font, null, false);
+                "new-file.png", font, new NewButtonListener(), false);
         addMenuItem("File/Open", "Open source file", KeyEvent.VK_O,
-                "folder.png", font, null, false);
+                "folder.png", font, new OpenButtonListener(), false);
         addMenuItem("File/Save", "Save current state in file", KeyEvent.VK_S,
-                "bookmark.png", font, null, false);
+                "bookmark.png", font, new SaveButtonListener(), false);
         addMenuSeparator("File");
         addMenuItem("File/Exit", "Exit application", KeyEvent.VK_X,
                 null, font, null, false);
@@ -62,7 +65,7 @@ public class MainWindow extends MainFrame {
         addMenuItem("Edit/Clear", "Clear field", KeyEvent.VK_C,
                 "close.png", font, new clearButtonListener(), false);
         addMenuItem("Edit/Settings", "Set parameters",
-                KeyEvent.VK_P, "settings.png", font, new settingsButtonListener(), false);
+                KeyEvent.VK_P, "settings.png", font, new SettingsButtonListener(), false);
 
         addSubMenu("View", font, KeyEvent.VK_V);
         addMenuItem("View/Toolbar", "Show/hide toolbar", KeyEvent.VK_T,
@@ -167,22 +170,23 @@ public class MainWindow extends MainFrame {
         }
     }
 
-    class settingsButtonListener implements ActionListener {
+    class SettingsButtonListener implements ActionListener {
 
-        private SettingsDialog dialog = new SettingsDialog(new OKButtonListener(), new CancelButtonListener());
+        SettingsDialog dialog = new SettingsDialog(new OKButtonListener(), new CancelButtonListener());
+        ;
 
-        private Double curBIRTH_BEGIN;
-        private Double curBIRTH_END;
-        private Double curLIVE_BEGIN;
-        private Double curLIVE_END;
-        private int curCellSize;
-        private int curGridWidth;
-        private int curTimerPeriod;
-        private Double curFST_IMPACT;
-        private Double curSND_IMPACT;
-        private boolean curXORMode;
-        private int curRowsCount;
-        private int curColumnsCount;
+        Double curBIRTH_BEGIN;
+        Double curBIRTH_END;
+        Double curLIVE_BEGIN;
+        Double curLIVE_END;
+        int curCellSize;
+        int curGridWidth;
+        int curTimerPeriod;
+        Double curFST_IMPACT;
+        Double curSND_IMPACT;
+        boolean curXORMode;
+        int curRowsCount;
+        int curColumnsCount;
 
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -213,6 +217,7 @@ public class MainWindow extends MainFrame {
             dialog.setMode(curXORMode);
             dialog.pack();
             dialog.setResizable(false);
+            dialog.setLocationRelativeTo(fieldView);
             dialog.setVisible(true);
         }
 
@@ -299,6 +304,86 @@ public class MainWindow extends MainFrame {
                 isSelected = false;
             }
         }
+    }
+
+    class NewButtonListener extends SettingsButtonListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            super.actionPerformed(e);
+            fieldView.clearField();
+            fieldView.hideImpacts();
+        }
+
+    }
+
+    class OpenButtonListener implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            File openFile = getOpenFileName(null, null);
+            if (openFile != null) {
+                fieldView.clearField();
+                try {
+                    BufferedReader buf = new BufferedReader(new FileReader(openFile));
+                    String line;
+                    int lineCount = 1;
+                    while ((line = buf.readLine()) != null) {
+                        int commentStartIndex = line.indexOf("//");
+                        if (commentStartIndex > 0) {
+                            line = line.substring(0, commentStartIndex);
+                        }
+                        String[] numbers = line.split(" ");
+                        switch (lineCount) {
+                            case 1:
+                                fieldView.resizeField(Integer.parseInt(numbers[0]), Integer.parseInt(numbers[1]));
+                                break;
+                            case 2:
+                                fieldView.setGridWidth(Integer.parseInt(numbers[0]));
+                                break;
+                            case 3:
+                                fieldView.setCellSize(Integer.parseInt(numbers[0]));
+                                break;
+                            case 4:
+                                break;
+                            default:
+                                controller.setAliveCell(Integer.parseInt(numbers[0]), Integer.parseInt(numbers[1]));
+                        }
+                        lineCount++;
+                    }
+                    fieldView.updateField();
+                } catch (Exception exception) {
+                    fieldView.clearField();
+                    System.err.println("Wrong input file format");              //TODO!!
+                }
+            }
+        }
+
+    }
+
+    class SaveButtonListener implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            File saveFile = getSaveFileName("txt", "Text files");
+            if (saveFile != null) {
+                try {
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(saveFile));
+                    writer.write(controller.getFieldHeight() + " " + controller.getFieldWidth() + "\n");
+                    writer.write(fieldView.getGridWidth() + "\n");
+                    writer.write(fieldView.getCellSize() + "\n");
+                    ArrayList<Pair<Integer, Integer>> aliveCells = controller.getAliveCells();
+                    int aliveCellsCount = aliveCells.size();
+                    writer.write(aliveCellsCount + "\n");
+                    for (Pair<Integer, Integer> curAliveCell : aliveCells) {
+                        writer.write(curAliveCell.getKey() + " " + curAliveCell.getValue() + "\n");
+                    }
+                    writer.close();
+                } catch (IOException e1) {
+                }
+            }
+        }
+
     }
 
 }
