@@ -2,89 +2,166 @@ package ru.nsu.fit.g16203.voloshina.view;
 
 import ru.nsu.fit.g16203.voloshina.controller.IController;
 import ru.nsu.fit.g16203.voloshina.general.Pair;
+import ru.nsu.fit.g16203.voloshina.general.exception.OutOfFieldRangeException;
+import ru.nsu.fit.g16203.voloshina.model.CellStatus;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayDeque;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class FieldView extends JPanel {
 
     private int cellSize = 30;
-    private double r = Math.sqrt(3) * ((double) cellSize) / 2;
+    private double r = countInnerHexagonRadius();
     private int fieldHeight;
     private int fieldWidth;
+    private int gridWidth = 1;
 
     private int indent = 10;
 
-    private int pixelFieldWidth = (int) Math.round(2 * r * 10) + 1;
-    private int pixelFieldHeight = (int) Math.round(cellSize * (0.5 + 1.5 * 10)) + 1;
-    private BufferedImage image = new BufferedImage(pixelFieldWidth, pixelFieldHeight, BufferedImage.TYPE_INT_ARGB);
+    private int pixelFieldWidth;
+    private int pixelFieldHeight;
+    private BufferedImage image;
+    private BufferedImage impactsImage;
 
     private Color backgroundColor = new Color(0, 0, 0, 0);
     private Color borderColor = new Color(11, 5, 37, 255);
     private Color hexagonAliveColor = new Color(40, 138, 204, 255);//(63,81,181);//(5,166,5);
     private Color hexagonDeadColor = new Color(187, 222, 251, 255);//(255,240,197);
+    private Color textColor = Color.BLACK;
 
-    public FieldView(int n, int m, IController controller) {
+    private Timer timer;
+    private Step step;
+    private int timePeriod = 1000;
 
-        fieldHeight = n;
-        fieldWidth = m;
+    private boolean isXORModeOn = false;
+    private boolean isImpactsShown = false;
+    private Pair<Integer, Integer> curHexagon = new Pair<>(-1, -1);
+
+    private IController controller;
+
+    public FieldView(IController iController) {
+
+        controller = iController;
+
+        fieldHeight = controller.getFieldHeight();
+        fieldWidth = controller.getFieldWidth();
+        pixelFieldWidth = countPixelFieldWidth();
+        pixelFieldHeight = countPixelFieldHeight();
+        image = new BufferedImage(pixelFieldWidth, pixelFieldHeight, BufferedImage.TYPE_INT_ARGB);
+        impactsImage = new BufferedImage(pixelFieldWidth, pixelFieldHeight, BufferedImage.TYPE_INT_ARGB);
 
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int x = e.getX() - indent;
-                int y = e.getY() - indent;
-                //System.out.println("Pressed pixel: (" + x + "," + y + ")");
-                if (x < 0 || x > pixelFieldWidth || y < 0 || y > pixelFieldHeight) {
-                    return;
-                }
-                if (image.getRGB(x, y) == borderColor.getRGB() || image.getRGB(x, y) == backgroundColor.getRGB()) {
-                    return;
-                }
-                Pair<Integer, Integer> position = getHexagonPosition(x, y);
-                if (position.getKey() != null && position.getValue() != null
-                        && (position.getKey() >= 0 && position.getValue() >= 0)) {
-                    //System.out.println("Hexagon position: " + position.getKey() + "," + position.getValue());
-                    Pair<Double, Double> hexagonCenter = countHexagonCenter(position.getValue(), position.getKey());
-                    fillHexagon((int) Math.round(hexagonCenter.getKey()), (int) Math.round(hexagonCenter.getValue()),
-                            hexagonDeadColor.getRGB(), hexagonAliveColor.getRGB());
-                    repaint();
-                }
+                int x = e.getX() - indent;                     //TODO: add indent!!
+                int y = e.getY() - indent;                     //TODO: add indent!!
+                hexagonUpdate(x, y, false);
+            }
+        });
+
+        addMouseMotionListener(new MouseMotionListener() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                int x = e.getX() - indent;                     //TODO: add indent!!
+                int y = e.getY() - indent;                     //TODO: add indent!!
+                hexagonUpdate(x, y, true);
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+
             }
         });
 
         //image.getGraphics().setColor(new Color(0, 0, 0, 0));
-        //image.getGraphics().fillRect(0, 0, image.getWidth(), image.getHeight());
+        //image.getGraphics().fillRect(0, 0, image.getCurWidth(), image.getHeight());
         printField();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        g.drawImage(image, indent, indent, pixelFieldWidth, pixelFieldHeight, null);
+        g.drawImage(image, 0, 0, image.getWidth(), image.getHeight(), null);
+        g.drawImage(impactsImage, 0, 0, impactsImage.getWidth(), impactsImage.getHeight(), null);
     }
 
-    public int getFieldHeight() {
-        return fieldHeight;
+    private double countInnerHexagonRadius() {
+        return Math.sqrt(3) * ((double) cellSize) / 2;
     }
 
-    public void setFieldHeight(int fieldHeight) {
-        this.fieldHeight = fieldHeight;
+    private int countPixelFieldWidth() {
+        return (int) Math.round(2 * r * fieldWidth) + indent * 2;                     //TODO: add indent!!
     }
 
-    public int getFieldWidth() {
-        return fieldWidth;
+    private int countPixelFieldHeight() {
+        return (int) Math.round(cellSize * (0.5 + 1.5 * fieldHeight)) + indent * 2;                     //TODO: add indent!!
     }
 
-    public void setFieldWidth(int fieldWidth) {
-        this.fieldWidth = fieldWidth;
+    private void hexagonUpdate(int x, int y, boolean isDragged) {
+        if (x < 0 || x > pixelFieldWidth - indent * 2 || y < 0 || y > pixelFieldHeight - indent * 2) {
+            return;
+        }
+        if (image.getRGB(x, y) == borderColor.getRGB() || image.getRGB(x, y) == backgroundColor.getRGB()) {
+            return;
+        }
+        Pair<Integer, Integer> position = getHexagonPosition(x, y);
+        if (position.getKey() != null && position.getValue() != null
+                && (position.getKey() >= 0 && position.getValue() >= 0)) {
+            int oldColor;
+            int newColor;
+            try {
+                if (isXORModeOn) {
+                    if (isDragged && position.getKey().equals(curHexagon.getKey()) && position.getValue().equals(curHexagon.getValue())) {
+                        return;
+                    }
+                    curHexagon = position;
+                    CellStatus cellStatus = controller.getCellStatus(position.getValue(), position.getKey());
+                    Pair<Integer, Integer> hexagonColors = getFillHexagonColors(cellStatus);
+                    oldColor = hexagonColors.getKey();
+                    newColor = hexagonColors.getValue();
+                    controller.reverseCellState(position.getValue(), position.getKey());
+//                    if(oldColor == hexagonDeadColor.getRGB()){
+//                        newColor = hexagonAliveColor.getRGB();
+//                    } else if (oldColor == hexagonAliveColor.getRGB()){
+//                        newColor = hexagonDeadColor.getRGB();
+//                    } else {
+//                        return;
+//                    }
+                } else {
+                    controller.setAliveCell(position.getValue(), position.getKey());
+                    oldColor = hexagonDeadColor.getRGB();
+                    newColor = hexagonAliveColor.getRGB();
+                }
+            } catch (OutOfFieldRangeException ex) {
+                return;
+            }
+            Pair<Double, Double> hexagonCenter = countHexagonCenter(position.getValue(), position.getKey());
+            fillHexagon((int) Math.round(hexagonCenter.getKey()), (int) Math.round(hexagonCenter.getValue()),
+                    oldColor, newColor);
+            if (isImpactsShown) {
+                repaintImpacts();
+            } else {
+                repaint();
+            }
+        }
     }
 
-    private void drawLine(int x0, int y0, int x1, int y1) {
+    private Pair<Integer, Integer> getFillHexagonColors(CellStatus cellStatus) {
+        if (cellStatus == CellStatus.ALIVE) {
+            return new Pair<>(hexagonAliveColor.getRGB(), hexagonDeadColor.getRGB());
+        } else {
+            return new Pair<>(hexagonDeadColor.getRGB(), hexagonAliveColor.getRGB());
+        }
+    }
+
+    private void drawBresenhamLine(int x0, int y0, int x1, int y1) {
         if (x1 < x0) {
             int tmpx = x0;
             x0 = x1;
@@ -130,45 +207,85 @@ public class FieldView extends JPanel {
         }
     }
 
-    private void drawHexagon(double centerX, double centerY) {
+    private void drawLine(Graphics2D g, int x0, int y0, int x1, int y1) {
+        if (gridWidth == 1) {
+            drawBresenhamLine(x0, y0, x1, y1);
+        } else {
+            g.setStroke(new BasicStroke(gridWidth));
+            g.drawLine(x0, y0, x1, y1);
+            //image.getGraphics().drawLine(x0, y0, x1, y1);
+        }
+    }
+
+    private void drawHexagon(Graphics2D g, double centerX, double centerY) {
         int x0 = (int) Math.round(centerX);
         int y0 = (int) Math.round(centerY - cellSize);
         int x1 = (int) Math.round(centerX + r);
         int y1 = (int) Math.round(centerY - (float) cellSize / 2);
-        drawLine(x0, y0, x1, y1);
+        drawLine(g, x0, y0, x1, y1);
         int y2 = (int) Math.round(centerY + (float) cellSize / 2);
-        drawLine(x1, y1, x1, y2);
+        drawLine(g, x1, y1, x1, y2);
         int y3 = (int) Math.round(centerY + cellSize);
-        drawLine(x1, y2, x0, y3);
+        drawLine(g, x1, y2, x0, y3);
         int x4 = (int) Math.round(centerX - r);
-        drawLine(x0, y3, x4, y2);
-        drawLine(x4, y2, x4, y1);
-        drawLine(x4, y1, x0, y0);
+        drawLine(g, x0, y3, x4, y2);
+        drawLine(g, x4, y2, x4, y1);
+        drawLine(g, x4, y1, x0, y0);
     }
 
     private Pair<Double, Double> countHexagonCenter(int x, int y) {
         double centerX = (y % 2 == 0) ? (2 * x + 1) * r : 2 * (x + 1) * r;
         double centerY = cellSize * (1 + 1.5 * y);
-        return new Pair<>(centerX, centerY);
+        return new Pair<>(centerX + indent, centerY + indent);                  //TODO: add indent!!
     }
 
-    public void printField() {
+    private void printField() {
+        Graphics2D g = (Graphics2D) image.getGraphics().create();
+        g.setColor(borderColor);
         for (int i = 0; i < fieldHeight; i++) {
             int end = (i % 2 == 0) ? fieldWidth : fieldWidth - 1;
             for (int j = 0; j < end; j++) {
                 Pair<Double, Double> hexagonCenter = countHexagonCenter(j, i);
                 int centerX = (int) Math.round(hexagonCenter.getKey());
                 int centerY = (int) Math.round(hexagonCenter.getValue());
-                drawHexagon(hexagonCenter.getKey(), hexagonCenter.getValue());
+                drawHexagon(g, hexagonCenter.getKey(), hexagonCenter.getValue());
                 fillHexagon(centerX, centerY, image.getRGB(centerX, centerY), hexagonDeadColor.getRGB());
+            }
+        }
+        g.dispose();
+    }
+
+    private void printImpacts(Graphics2D g2d) {
+        FontMetrics fm = g2d.getFontMetrics();
+        for (int i = 0; i < fieldHeight; i++) {
+            int end = controller.getFieldCurWidth(i);
+            for (int j = 0; j < end; j++) {
+                Pair<Double, Double> hexagonCenter = countHexagonCenter(j, i);
+                int centerX = (int) Math.round(hexagonCenter.getKey());
+                int centerY = (int) Math.round(hexagonCenter.getValue());
+                String curTextImpact;
+                double curImpact = controller.getCellImpact(j, i);
+                if ((int) ((curImpact % 1) * 10) != 0) {
+                    curTextImpact = String.valueOf(Math.round(curImpact * 10) / 10.0);
+                } else {
+                    curTextImpact = String.valueOf((int) curImpact);
+                }
+                int x = centerX - fm.stringWidth(curTextImpact) / 2;
+                int y = centerY + cellSize / 2 - fm.getHeight() / 4;
+                g2d.drawString(curTextImpact, x, y);
             }
         }
     }
 
     private void fillHexagon(int startX, int startY, int curColor, int fillColor) {
+        if (curColor == fillColor) return;
         ArrayDeque<Pair<Integer, Integer>> spanStack = new ArrayDeque<>();
         spanStack.push(new Pair<>(startX, startY));
         spanFill(spanStack, curColor, fillColor);
+    }
+
+    private void makeHexagonAlive(int centerX, int centerY) {
+        fillHexagon(centerX, centerY, image.getRGB(centerX, centerY), hexagonAliveColor.getRGB());
     }
 
     private void spanFill(ArrayDeque<Pair<Integer, Integer>> spanStack, int oldColor, int fillColor) {
@@ -213,8 +330,6 @@ public class FieldView extends JPanel {
         int sectionX = (int) (x / r);
         int modX = (int) (x - sectionX * r);
         int modY = (y - sectionY * cellSize);
-        System.out.println(sectionX + " " + sectionY);
-        System.out.println(modX + " " + modY);
         double kx = cellSize * modX / (r * 2);
         switch (sectionY % 3) {
             case 2:
@@ -256,8 +371,171 @@ public class FieldView extends JPanel {
         }
     }
 
-    public void simulationStep() {
+    private void makeHexagonDead(int centerX, int centerY) {
+        fillHexagon(centerX, centerY, image.getRGB(centerX, centerY), hexagonDeadColor.getRGB());
+    }
 
+    private void updateFieldContent() {
+        for (int i = 0; i < fieldHeight; i++) {
+            int end = controller.getFieldCurWidth(i);
+            for (int j = 0; j < end; j++) {
+                CellStatus cellStatus = controller.getCellStatus(j, i);
+                Pair<Double, Double> hexagonCenter = countHexagonCenter(j, i);
+                int centerX = (int) Math.round(hexagonCenter.getKey());
+                int centerY = (int) Math.round(hexagonCenter.getValue());
+                if (cellStatus == CellStatus.ALIVE) {
+                    makeHexagonAlive(centerX, centerY);
+                } else if (cellStatus == CellStatus.DEAD) {
+                    makeHexagonDead(centerX, centerY);
+                }
+
+            }
+        }
+    }
+
+    private void updateFieldCondition() {
+        image = new BufferedImage(pixelFieldWidth, pixelFieldHeight, BufferedImage.TYPE_INT_ARGB);
+        printField();
+        updateFieldContent();
+//        repaint();
+    }
+
+    private int calculateFontSize() {
+        return cellSize * 3 / 4;
+    }
+
+    private void repaintImpacts() {
+        impactsImage = new BufferedImage(pixelFieldWidth, pixelFieldHeight, BufferedImage.TYPE_INT_ARGB);
+        showImpacts();
+    }
+
+    public int getCellSize() {
+        return cellSize;
+    }
+
+    public void setCellSize(int cellSize) {
+        this.cellSize = cellSize;
+        r = countInnerHexagonRadius();
+        pixelFieldWidth = countPixelFieldWidth();
+        pixelFieldHeight = countPixelFieldHeight();
+        updateFieldCondition();
+        if (isImpactsShown) {
+            repaintImpacts();
+        } else {
+            repaint();
+        }
+    }
+
+    public int getGridWidth() {
+        return gridWidth;
+    }
+
+    public void setGridWidth(int gridWidth) {
+        this.gridWidth = gridWidth;
+        pixelFieldWidth = countPixelFieldWidth();
+        pixelFieldHeight = countPixelFieldHeight();
+        updateFieldCondition();
+        if (isImpactsShown) {
+            repaintImpacts();
+        } else {
+            repaint();
+        }
+    }
+
+    public int getTimePeriod() {
+        return timePeriod;
+    }
+
+    public void setTimePeriod(int timePeriod) {
+        this.timePeriod = timePeriod;
+    }
+
+    public boolean isXORModeOn() {
+        return isXORModeOn;
+    }
+
+    public void turnXORModeOn() {
+        isXORModeOn = true;
+    }
+
+    public void turnXORModeOff() {
+        isXORModeOn = false;
+    }
+
+    public void simulationStep() {
+        controller.next();
+        updateFieldContent();
+        if (isImpactsShown) {
+            repaintImpacts();
+        } else {
+            repaint();
+        }
+    }
+
+    public void runSimulation() {
+        timer = new Timer();
+        step = new Step();
+        timer.schedule(step, 0, timePeriod);
+    }
+
+    public void stopSimulation() {
+        timer.cancel();
+    }
+
+    public void clearField() {
+        controller.clearField();
+        updateFieldContent();
+        if (isImpactsShown) {
+            repaintImpacts();
+        } else {
+            repaint();
+        }
+    }
+
+    public void resizeField(int newWidth, int newHeight) {
+        if (newWidth != fieldWidth || newHeight != fieldHeight) {
+            if (newWidth != fieldWidth) {
+                fieldWidth = newWidth;
+                pixelFieldWidth = countPixelFieldWidth();
+            }
+            if (newHeight != fieldHeight) {
+                fieldHeight = newHeight;
+                pixelFieldHeight = countPixelFieldHeight();
+            }
+            controller.resizeField(newWidth, newHeight);
+            updateFieldCondition();
+            if (isImpactsShown) {
+                repaintImpacts();
+            } else {
+                repaint();
+            }
+        }
+    }
+
+    public void showImpacts() {
+        isImpactsShown = true;
+        Graphics2D g2d = (Graphics2D) impactsImage.getGraphics().create();
+        g2d.setColor(textColor);
+        g2d.setFont(new Font("TimesNewRoman", Font.PLAIN, calculateFontSize()));
+        printImpacts(g2d);
+        g2d.dispose();
+        repaint();
+    }
+
+    public void hideImpacts() {
+        isImpactsShown = false;
+        impactsImage = new BufferedImage(pixelFieldWidth, pixelFieldHeight, BufferedImage.TYPE_INT_ARGB);
+        //impactsImage.getGraphics().setColor(backgroundColor);
+        //impactsImage.getGraphics().fillRect(0, 0, impactsImage.getWidth(), impactsImage.getHeight());
+        repaint();
+        //updateFieldCondition();
+    }
+
+    class Step extends TimerTask {
+        @Override
+        public void run() {
+            simulationStep();
+        }
     }
 
 }

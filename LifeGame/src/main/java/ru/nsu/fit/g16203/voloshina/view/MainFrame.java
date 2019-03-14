@@ -4,11 +4,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.security.InvalidParameterException;
+import java.util.HashMap;
 
 public class MainFrame extends JFrame {
 
     private JMenuBar menuBar;
     private JToolBar toolBar;
+    private HashMap<String, JButton> toolbarButtons = new HashMap<>();
 
     public MainFrame() throws HeadlessException {
         try {
@@ -30,7 +32,7 @@ public class MainFrame extends JFrame {
 
     }
 
-    private Icon findIcon(String icon) {
+    public Icon findIcon(String icon) {
         return new ImageIcon(getClass().getResource("/" + icon));
     }
 
@@ -165,7 +167,7 @@ public class MainFrame extends JFrame {
         return button;
     }
 
-    private JButton createToolBarButton(String menuPath, String icon) {
+    public JButton createToolBarButton(String menuPath, String icon) {
         JMenuItem item = (JMenuItem) getMenuElement(menuPath);
         if (item == null)
             throw new InvalidParameterException("Menu path not found: " + menuPath);
@@ -173,11 +175,19 @@ public class MainFrame extends JFrame {
     }
 
     public void addToolBarButton(String menuPath) {
-        toolBar.add(createToolBarButton(menuPath, null));
+        JButton button = createToolBarButton(menuPath, null);
+        toolBar.add(button);
+        toolbarButtons.put(menuPath, button);
     }
 
     public void addToolBarButton(String menuPath, String icon) {
-        toolBar.add(createToolBarButton(menuPath, icon));
+        JButton button = createToolBarButton(menuPath, icon);
+        toolBar.add(button);
+        toolbarButtons.put(menuPath, button);
+    }
+
+    public JButton getToolBarButton(String menuPath) {
+        return toolbarButtons.get(menuPath);
     }
 
     public void addToolBarSeparator() {

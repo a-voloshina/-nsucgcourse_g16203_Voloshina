@@ -9,15 +9,17 @@ public interface IController {
 
     void reverseCellState(int coordinateX, int coordinateY) throws OutOfFieldRangeException;
 
-    CellStatus getCellStatus(int coordinateX, int coordinateY) throws OutOfFieldRangeException;
+    CellStatus getCellStatus(int coordinateX, int coordinateY);
 
-    Double getCellImpact(int coordinateX, int coordinateY) throws OutOfFieldRangeException;
+    Double getCellImpact(int coordinateX, int coordinateY);
+
+    int getFieldCurWidth(int curHeight);
+
+    int getFieldWidth();
+
+    int getFieldHeight();
 
     void next();
-
-    void run();
-
-    void stop();
 
     void resizeField(int newWidth, int newHeight);
 

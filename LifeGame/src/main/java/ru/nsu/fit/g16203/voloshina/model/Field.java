@@ -13,8 +13,12 @@ public class Field<T> {
 
     private int defaultFieldSize = 10;
 
-    public int getWidth(int curHeight) {
+    public int getCurWidth(int curHeight) {
         return checkWidth(width, curHeight);
+    }
+
+    public int getWidth() {
+        return width;
     }
 
     public int getHeight() {
@@ -52,16 +56,16 @@ public class Field<T> {
         }
     }
 
-    public T getItem(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
+    public T getItem(int coordinateX, int coordinateY) {
         int width = checkWidth(this.width, coordinateY);
         if (coordinateX < width && coordinateX >= 0 && coordinateY < height && coordinateY >= 0) {
             return field.get(coordinateY).get(coordinateX);
         } else {
-            throw new OutOfFieldRangeException(coordinateX, coordinateY, width, height);
+            return null;
         }
     }
 
-    public void updateField(IMyFunc<T> fn) throws OutOfFieldRangeException {
+    public void updateField(IMyFunc<T> fn) {
         for (int i = 0; i < height; i++) {
             int end = checkWidth(width, i);
             for (int j = 0; j < end; j++) {
@@ -92,8 +96,17 @@ public class Field<T> {
         return (height % 2 == 0) ? width : width - 1;
     }
 
-    public interface IMyFunc<T> {
-        T updateFieldItem(int x, int y) throws OutOfFieldRangeException;
+    private void decreaseWidth(int newWidth, int newHeight) {
+        for (int i = 0; i < newHeight; i++) {
+            int start = checkWidth(width, i) - 1;
+            int end = checkWidth(newWidth, i) - 1;
+//            if (start >= end + 1) {
+//                field.get(i).subList(end + 1, start + 1).clear();
+//            }
+            if (start > end) {
+                field.get(i).subList(end + 1, start + 1).clear();
+            }
+        }
     }
 
     public void printField() {
@@ -154,14 +167,8 @@ public class Field<T> {
         }
     }
 
-    private void decreaseWidth(int newWidth, int newHeight) {
-        for (int i = 0; i < newHeight; i++) {
-            int start = checkWidth(width, i) - 1;
-            int end = checkWidth(newWidth, i) - 1;
-            if (start >= end + 1) {
-                field.get(i).subList(end + 1, start + 1).clear();
-            }
-        }
+    public interface IMyFunc<T> {
+        T updateFieldItem(int x, int y);
     }
 
     private void decreaseHeight(int newHeight) {

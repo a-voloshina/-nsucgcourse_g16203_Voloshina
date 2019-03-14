@@ -7,23 +7,14 @@ import ru.nsu.fit.g16203.voloshina.model.CellField;
 import ru.nsu.fit.g16203.voloshina.model.ImpactField;
 
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class Controller implements IController {
-
-    public Double getLIVE_BEGIN() {
-        return LIVE_BEGIN;
-    }
 
     private CellField oldCellField;
     private CellField curCellField;
     private ImpactField oldImpactField;
     private ImpactField curImpactField;
 
-    private Timer timer;
-    private Step step;
-    private long timePeriod = 1000;
     private ArrayList<Pair<Integer, Integer>> evenLineFirstImpact = new ArrayList<Pair<Integer, Integer>>() {{
         add(new Pair<>(-1, -1));
         add(new Pair<>(-1, 0));
@@ -71,6 +62,10 @@ public class Controller implements IController {
         this.curCellField = new CellField(width, height);
     }
 
+    public Double getLIVE_BEGIN() {
+        return LIVE_BEGIN;
+    }
+
     public void setLIVE_BEGIN(Double LIVE_BEGIN) {
         this.LIVE_BEGIN = LIVE_BEGIN;
     }
@@ -116,20 +111,14 @@ public class Controller implements IController {
     }
 
     private void countImpacts() {
-        try {
-            curImpactField.updateField(this::countCurrentCellImpact);
-        } catch (OutOfFieldRangeException ignored) {
-        }
+        curImpactField.updateField(this::countCurrentCellImpact);
     }
 
     private void updateField() {
-        try {
-            curCellField.updateField(this::updateCurCellStatus);
-        } catch (OutOfFieldRangeException ignored) {
-        }
+        curCellField.updateField(this::updateCurCellStatus);
     }
 
-    private CellStatus updateCurCellStatus(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
+    private CellStatus updateCurCellStatus(int coordinateX, int coordinateY) {
         CellStatus status = oldCellField.getItem(coordinateX, coordinateY);
         double impact = curImpactField.getItem(coordinateX, coordinateY);
         if ((status == CellStatus.DEAD) && (impact >= BIRTH_BEGIN)
@@ -142,7 +131,7 @@ public class Controller implements IController {
         return status;
     }
 
-    private double countCurrentCellImpact(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
+    private double countCurrentCellImpact(int coordinateX, int coordinateY) {
         Pair<Integer, Integer> aliveNeighboursCount = new Pair<>(0, 0);
         if (coordinateY % 2 == 0) {
             getAliveNeighboursCount(aliveNeighboursCount,
@@ -159,7 +148,7 @@ public class Controller implements IController {
                                          ArrayList<Pair<Integer, Integer>> firstNeighboursImpact,
                                          ArrayList<Pair<Integer, Integer>> secondNeighboursImpact,
                                          int coordinateX,
-                                         int coordinateY) throws OutOfFieldRangeException {
+                                         int coordinateY) {
         int size = firstNeighboursImpact.size();
         int firstAliveNeighboursCount = 0;
         int secondAliveNeighboursCount = 0;
@@ -174,56 +163,88 @@ public class Controller implements IController {
     private int isNeighbourAlive(ArrayList<Pair<Integer, Integer>> neighboursImpact,
                                  int i,
                                  int coordinateX,
-                                 int coordinateY) throws OutOfFieldRangeException {
+                                 int coordinateY) {
         int neighbourCoordinateX = neighboursImpact.get(i).getValue() + coordinateX;
         int neighbourCoordinateY = neighboursImpact.get(i).getKey() + coordinateY;
-        CellStatus neighbourState = oldCellField.getItem(neighbourCoordinateX, neighbourCoordinateY);
+        CellStatus neighbourState = curCellField.getItem(neighbourCoordinateX, neighbourCoordinateY);
         if (neighbourState == CellStatus.ALIVE) {
             return 1;
         }
         return 0;
     }
 
+    private void recountNeighboursImpacts(int coordinateX, int coordinateY) {
+        ArrayList<Pair<Integer, Integer>> firstNeighboursImpact = coordinateY % 2 == 0 ? evenLineFirstImpact : oddLineFirstImpact;
+        ArrayList<Pair<Integer, Integer>> secondNeighboursImpact = coordinateY % 2 == 0 ? evenLineSecondImpact : oddLineSecondImpact;
+        int size = firstNeighboursImpact.size();
+        for (int i = 0; i < size; i++) {
+            int firstNeighbourCoordinateX = firstNeighboursImpact.get(i).getValue() + coordinateX;
+            int firstNeighbourCoordinateY = firstNeighboursImpact.get(i).getKey() + coordinateY;
+            int secondNeighbourCoordinateX = secondNeighboursImpact.get(i).getValue() + coordinateX;
+            int secondNeighbourCoordinateY = secondNeighboursImpact.get(i).getKey() + coordinateY;
+            try {
+                curImpactField.setItem(firstNeighbourCoordinateX, firstNeighbourCoordinateY,
+                        countCurrentCellImpact(firstNeighbourCoordinateX, firstNeighbourCoordinateY));
+            } catch (OutOfFieldRangeException ignored) {
+            }
+            try {
+                curImpactField.setItem(secondNeighbourCoordinateX, secondNeighbourCoordinateY,
+                        countCurrentCellImpact(secondNeighbourCoordinateX, secondNeighbourCoordinateY));
+            } catch (OutOfFieldRangeException ignored) {
+            }
+        }
+    }
+
     public void setAliveCell(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
-        oldCellField.addAliveCell(coordinateX, coordinateY);
+        curCellField.addAliveCell(coordinateX, coordinateY);
+        curImpactField.setItem(coordinateX, coordinateY, countCurrentCellImpact(coordinateX, coordinateY));
+        countImpacts();
+        curCellField.printField();
+        //recountNeighboursImpacts(coordinateX, coordinateY);
     }
 
     @Override
     public void reverseCellState(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
-        oldCellField.reverseCellState(coordinateX, coordinateY);
+        curCellField.reverseCellState(coordinateX, coordinateY);
+        curImpactField.setItem(coordinateX, coordinateY, countCurrentCellImpact(coordinateX, coordinateY));
+        countImpacts();
+        curCellField.printField();
+        //recountNeighboursImpacts(coordinateX, coordinateY);
     }
 
     @Override
-    public CellStatus getCellStatus(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
+    public CellStatus getCellStatus(int coordinateX, int coordinateY) {
         return curCellField.getItem(coordinateX, coordinateY);
     }
 
     @Override
-    public Double getCellImpact(int coordinateX, int coordinateY) throws OutOfFieldRangeException {
+    public Double getCellImpact(int coordinateX, int coordinateY) {
         return curImpactField.getItem(coordinateX, coordinateY);
     }
 
-    public interface IModifyField<T> {
-        T fieldModified(int x, int y);
+    @Override
+    public int getFieldCurWidth(int curHeight) {
+        return curCellField.getCurWidth(curHeight);
+    }
+
+    @Override
+    public int getFieldWidth() {
+        return curCellField.getWidth();
+    }
+
+    @Override
+    public int getFieldHeight() {
+        return curCellField.getHeight();
     }
 
     public void next() {
-        countImpacts();
-        updateField();
-        curCellField.printField();
-        System.out.println();
+        //oldImpactField.swap(curImpactField);
         oldCellField.swap(curCellField);
-        oldImpactField.swap(curImpactField);
-    }
-
-    public void run() {
-        timer = new Timer();
-        step = new Step();
-        timer.schedule(step, 0, timePeriod);
-    }
-
-    public void stop() {
-        timer.cancel();
+        updateField();
+        countImpacts();
+        curCellField.printField();
+        curImpactField.printField();
+        System.out.println();
     }
 
     public void resizeField(int newWidth, int newHeight) {
@@ -243,14 +264,6 @@ public class Controller implements IController {
     public void printField() {
         curCellField.printField();
         System.out.println();
-    }
-
-    class Step extends TimerTask {
-
-        @Override
-        public void run() {
-            next();
-        }
     }
 
 }

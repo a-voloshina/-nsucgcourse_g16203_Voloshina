@@ -33,5 +33,6 @@ public class CellField extends Field<CellStatus> {
             }
             System.out.println();
         }
+        System.out.println();
     }
 }
