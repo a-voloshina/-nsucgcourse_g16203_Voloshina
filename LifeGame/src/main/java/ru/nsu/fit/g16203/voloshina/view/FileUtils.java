@@ -33,7 +33,7 @@ public class FileUtils {
             try {
                 String path = URLDecoder.decode(MainFrame.class.getProtectionDomain().getCodeSource().
                         getLocation().getFile(), Charset.defaultCharset().toString());
-                dataDirectory = new File(path).getParentFile();
+                dataDirectory = new File(path).getParentFile().getParentFile().getParentFile();
             } catch (UnsupportedEncodingException e) {
                 dataDirectory = new File(".");
             }
@@ -52,7 +52,9 @@ public class FileUtils {
         JFileChooser fileChooser = initFileChooser(extension, description);
 
         if (fileChooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
-            return getFile(extension, fileChooser);
+            File file = getFile(extension, fileChooser);
+            dataDirectory = file.getParentFile();
+            return file;
         }
         return null;
     }
@@ -61,7 +63,9 @@ public class FileUtils {
         JFileChooser fileChooser = initFileChooser(extension, description);
 
         if (fileChooser.showSaveDialog(parent) == JFileChooser.APPROVE_OPTION) {
-            return getFile(extension, fileChooser);
+            File file = getFile(extension, fileChooser);
+            dataDirectory = file.getParentFile();
+            return file;
         }
         return null;
     }

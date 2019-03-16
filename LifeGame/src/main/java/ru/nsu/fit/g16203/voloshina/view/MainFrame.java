@@ -2,7 +2,7 @@ package ru.nsu.fit.g16203.voloshina.view;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
@@ -18,11 +18,13 @@ public class MainFrame extends JFrame {
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
         } catch (Exception ignored) {
         }
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        setLayout(new BorderLayout());
+        //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         menuBar = new JMenuBar();
         setJMenuBar(menuBar);
         toolBar = new JToolBar("Main toolbar");
-        toolBar.setRollover(true);
+        toolBar.setRollover(false);
         add(toolBar, BorderLayout.PAGE_START);
     }
 
@@ -42,7 +44,7 @@ public class MainFrame extends JFrame {
                                     int mnemonic,
                                     String icon,
                                     Font font,
-                                    ActionListener actionMethod,
+                                    MouseListener actionMethod,
                                     boolean checkBox) {
         JMenuItem item;
         if (checkBox) {
@@ -57,7 +59,7 @@ public class MainFrame extends JFrame {
             item.setIcon(new ImageIcon(getClass().getResource("/" + icon), title));
         }
         if (actionMethod != null) {
-            item.addActionListener(actionMethod);
+            item.addMouseListener(actionMethod);
         }
         return item;
     }
@@ -126,7 +128,7 @@ public class MainFrame extends JFrame {
                             int mnemonic,
                             String icon,
                             Font font,
-                            ActionListener actionMethod,
+                            MouseListener actionMethod,
                             boolean checkBox) {
         MenuElement element = getParentMenuElement(title);
         if (element == null)
@@ -162,8 +164,8 @@ public class MainFrame extends JFrame {
         button.setHorizontalTextPosition(JButton.CENTER);
         button.setVerticalTextPosition(JButton.CENTER);
         button.setMargin(new Insets(0, 0, 0, 0));
-        for (ActionListener listener : item.getActionListeners())
-            button.addActionListener(listener);
+        for (MouseListener listener : item.getMouseListeners())
+            button.addMouseListener(listener);
         button.setToolTipText(item.getToolTipText());
         return button;
     }
@@ -195,12 +197,42 @@ public class MainFrame extends JFrame {
         toolBar.addSeparator();
     }
 
+    public void hideToolbar() {
+        toolBar.setVisible(false);
+    }
+
+    public void showToolbar() {
+        toolBar.setVisible(true);
+    }
+
     public File getSaveFileName(String extension, String description) {
         return FileUtils.getSaveFileName(this, extension, description);
     }
 
     public File getOpenFileName(String extension, String description) {
         return FileUtils.getOpenFileName(this, extension, description);
+    }
+
+    public void setSelectedMenuElement(String path, boolean isSelected) {
+        MenuElement element = getMenuElement(path);
+        if (element instanceof JCheckBoxMenuItem) {
+            ((JCheckBoxMenuItem) element).setSelected(isSelected);
+        }
+    }
+
+    public Boolean isSelectedMenuElement(String path) {
+        MenuElement element = getMenuElement(path);
+        if (element instanceof JCheckBoxMenuItem) {
+            return ((JCheckBoxMenuItem) element).isSelected();
+        }
+        return null;
+    }
+
+    public void setEnabledMenuElement(String path, boolean isEnabled) {
+        MenuElement element = getMenuElement(path);
+        if (element instanceof JMenuItem) {
+            ((JMenuItem) element).setEnabled(isEnabled);
+        }
     }
 
 }

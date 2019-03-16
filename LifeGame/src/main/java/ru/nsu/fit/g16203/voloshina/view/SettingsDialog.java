@@ -1,6 +1,8 @@
 package ru.nsu.fit.g16203.voloshina.view;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.event.ActionListener;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -45,14 +47,45 @@ public class SettingsDialog extends JDialog {
     private int gridWidthMax = 10;
     private int timerMax = 10000;
 
-    public SettingsDialog(ActionListener okButtonListener, ActionListener cancelButtonListener) {
+    public SettingsDialog() {
+        setTitle("Settings");
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
+        rowsTextField.setText("0");
+        columnsTextField.setText("0");
+        cellSizeTextField.setText("0");
+        gridWidthTextField.setText("0");
+        timerPeriodTextField.setText("0");
+        LIVE_BEGINTextField.setText("0");
+        LIVE_ENDTextField.setText("0");
+        BIRTH_BEGINTextField.setText("0");
+        BIRTH_ENDTextField.setText("0");
+
         rowsSlider.addChangeListener(event -> {
             int currentRowsCount = ((JSlider) event.getSource()).getValue();
             rowsTextField.setText(Integer.toString(currentRowsCount));
+        });
+
+        columnsSlider.addChangeListener(event -> {
+            int currentColumnsCount = ((JSlider) event.getSource()).getValue();
+            columnsTextField.setText(Integer.toString(currentColumnsCount));
+        });
+
+        cellSizeSlider.addChangeListener(event -> {
+            int currentCellSize = ((JSlider) event.getSource()).getValue();
+            cellSizeTextField.setText(Integer.toString(currentCellSize));
+        });
+
+        gridWidthSlider.addChangeListener(event -> {
+            int currentGridWidth = ((JSlider) event.getSource()).getValue();
+            gridWidthTextField.setText(Integer.toString(currentGridWidth));
+        });
+
+        timerSlider.addChangeListener(event -> {
+            int currentTimerPeriod = ((JSlider) event.getSource()).getValue();
+            timerPeriodTextField.setText(Integer.toString(currentTimerPeriod));
         });
 
         rowsTextField.addActionListener(event -> {
@@ -62,11 +95,6 @@ public class SettingsDialog extends JDialog {
             }
         });
 
-        columnsSlider.addChangeListener(event -> {
-            int currentColumnsCount = ((JSlider) event.getSource()).getValue();
-            columnsTextField.setText(Integer.toString(currentColumnsCount));
-        });
-
         columnsTextField.addActionListener(event -> {
             Integer currentColumnsCount = getInteger((JTextField) event.getSource(), columnsMax);
             if (currentColumnsCount != null) {
@@ -74,22 +102,11 @@ public class SettingsDialog extends JDialog {
             }
         });
 
-        cellSizeSlider.addChangeListener(event -> {
-            int currentCellSize = ((JSlider) event.getSource()).getValue();
-            cellSizeTextField.setText(Integer.toString(currentCellSize));
-        });
-
-
         cellSizeTextField.addActionListener(event -> {
             Integer currentCellSize = getInteger((JTextField) event.getSource(), cellSizeMax);
             if (currentCellSize != null) {
                 cellSizeSlider.setValue(currentCellSize);
             }
-        });
-
-        gridWidthSlider.addChangeListener(event -> {
-            int currentGridWidth = ((JSlider) event.getSource()).getValue();
-            gridWidthTextField.setText(Integer.toString(currentGridWidth));
         });
 
         gridWidthTextField.addActionListener(event -> {
@@ -99,10 +116,6 @@ public class SettingsDialog extends JDialog {
             }
         });
 
-        timerSlider.addChangeListener(event -> {
-            int currentTimerPeriod = ((JSlider) event.getSource()).getValue();
-            timerPeriodTextField.setText(Integer.toString(currentTimerPeriod));
-        });
 
         timerPeriodTextField.addActionListener(event -> {
             Integer currentTimerPeriod = getInteger((JTextField) event.getSource(), timerMax);
@@ -113,10 +126,6 @@ public class SettingsDialog extends JDialog {
 
         modeButtonGroup.add(XORRadioButton);
         modeButtonGroup.add(replaceRadioButton);
-
-        buttonOK.addActionListener(okButtonListener);
-        buttonCancel.addActionListener(cancelButtonListener);
-
     }
 
     private boolean setTextFieldValue(int value, int valueMax, JTextField textField, JSlider valueSlider) {
@@ -174,9 +183,15 @@ public class SettingsDialog extends JDialog {
             if (value <= valueMax) {
                 return value;
             } else {
+                String messageText = "Введенное значение больше максимально возможного ):";
+                JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                        JOptionPane.ERROR_MESSAGE);
                 return valueMax;
             }
         } catch (NumberFormatException ex) {
+            String messageText = "Необходимо ввести число!";
+            JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                    JOptionPane.ERROR_MESSAGE);
             return null;
         }
     }
@@ -208,8 +223,7 @@ public class SettingsDialog extends JDialog {
 
     public Double getBIRTH_BEGIN() {
         try {
-            double d = Double.parseDouble(BIRTH_BEGINTextField.getText());
-            return d;
+            return Double.parseDouble(BIRTH_BEGINTextField.getText());
         } catch (NumberFormatException ex) {
             return null;
         }
@@ -235,6 +249,21 @@ public class SettingsDialog extends JDialog {
         try {
             return Double.parseDouble(fstImpactTextField.getText());
         } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private Boolean checkCellsLifeConditionValues() {
+        try {
+            double liveBegin = Double.parseDouble(LIVE_BEGINTextField.getText());
+            double liveEnd = Double.parseDouble(LIVE_ENDTextField.getText());
+            double birthBegin = Double.parseDouble(BIRTH_BEGINTextField.getText());
+            double birthEnd = Double.parseDouble(BIRTH_ENDTextField.getText());
+            return liveBegin <= liveEnd && birthBegin <= birthEnd && birthEnd <= liveEnd;
+        } catch (NumberFormatException ex) {
+            String messageText = "Необходимо ввести число!";
+            JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                    JOptionPane.ERROR_MESSAGE);
             return null;
         }
     }
@@ -272,5 +301,47 @@ public class SettingsDialog extends JDialog {
         } else {
             modeButtonGroup.setSelected(replaceRadioButton.getModel(), true);
         }
+    }
+
+    public void setCheckModeOn() {
+        class ConditionListener implements DocumentListener {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                process();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                process();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                process();
+            }
+
+            private void process() {
+                Boolean cond = checkCellsLifeConditionValues();
+                if (cond != null && !cond) {
+                    String messageText = "Введенное значение не соответствует условию: " +
+                            "\"LIVE_BEGIN <= BIRTH_BEGIN <= BIRTH_END <= LIVE_END\"";
+                    JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+
+        LIVE_BEGINTextField.getDocument().addDocumentListener(new ConditionListener());
+        LIVE_ENDTextField.getDocument().addDocumentListener(new ConditionListener());
+        BIRTH_BEGINTextField.getDocument().addDocumentListener(new ConditionListener());
+        BIRTH_ENDTextField.getDocument().addDocumentListener(new ConditionListener());
+    }
+
+    public void setOkButtonListener(ActionListener listener) {
+        buttonOK.addActionListener(listener);
+    }
+
+    public void setCancelButtonListener(ActionListener listener) {
+        buttonCancel.addActionListener(listener);
     }
 }

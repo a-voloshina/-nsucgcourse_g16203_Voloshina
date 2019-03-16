@@ -175,7 +175,7 @@ public class Controller implements IController {
         curCellField.addAliveCell(coordinateX, coordinateY);
         curImpactField.setItem(coordinateX, coordinateY, countCurrentCellImpact(coordinateX, coordinateY));
         countImpacts();
-        curCellField.printField();
+        //curCellField.printField();
     }
 
     @Override
@@ -183,7 +183,7 @@ public class Controller implements IController {
         curCellField.reverseCellState(coordinateX, coordinateY);
         curImpactField.setItem(coordinateX, coordinateY, countCurrentCellImpact(coordinateX, coordinateY));
         countImpacts();
-        curCellField.printField();
+        //curCellField.printField();
     }
 
     @Override
@@ -220,9 +220,9 @@ public class Controller implements IController {
         oldCellField.swap(curCellField);
         updateField();
         countImpacts();
-        curCellField.printField();
-        curImpactField.printField();
-        System.out.println();
+        //curCellField.printField();
+        //curImpactField.printField();
+        //System.out.println();
     }
 
     public void resizeField(int newWidth, int newHeight) {

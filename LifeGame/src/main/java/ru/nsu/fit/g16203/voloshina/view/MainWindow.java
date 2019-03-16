@@ -5,9 +5,7 @@ import ru.nsu.fit.g16203.voloshina.general.Pair;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.util.ArrayList;
 
@@ -15,26 +13,40 @@ public class MainWindow extends MainFrame {
 
     private Controller controller;
     private FieldView fieldView;
+    JPanel statusPanel;
+    private JLabel statusBar;
+    private Component locationComponent;
 
-    private int n = 10;
-    private int m = 10;
+    private int n = 30;
+    private int m = 30;
+
+    private Font font = new Font("TimesNewRoman", Font.PLAIN, 14);
 
     public MainWindow() {
         super(800, 600, "FIT_16203_Voloshina_Life");
+        setTitle("Life Game");
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         controller = new Controller(n, m);
         fieldView = new FieldView(controller);
+        locationComponent = this;
 
         customizeMenu();
         customizeToolbar();
 
-        JScrollPane scrollPane = new JScrollPane(fieldView, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.revalidate();
-        add(scrollPane);
+        JScrollPane scrollPane = new JScrollPane(fieldView);
+        add(scrollPane, BorderLayout.CENTER);
 
-        setVisible(true);
-        setMaximumSize(new Dimension(n, m));
+        customizeStatusBar();
+
+        addWindowListener(new MainWindowListener());
+
+        setMinimumSize(new Dimension(800, 600));
         setLocationRelativeTo(null);
+        setVisible(true);
+        System.out.println("Status Bar " + isSelectedMenuElement("View/Status Bar"));
+        System.out.println("Toolbar " + isSelectedMenuElement("View/Toolbar"));
+        System.out.println("Impact " + isSelectedMenuElement("View/Impact"));
+        System.out.println();
     }
 
     public static void main(String[] args) {
@@ -42,8 +54,6 @@ public class MainWindow extends MainFrame {
     }
 
     private void customizeMenu() {
-        Font font = new Font("TimesNewRoman", Font.PLAIN, 14);
-
         addSubMenu("File", font, KeyEvent.VK_F);
         addMenuItem("File/New", "Create new file", KeyEvent.VK_N,
                 "new-file.png", font, new NewButtonListener(), false);
@@ -53,7 +63,7 @@ public class MainWindow extends MainFrame {
                 "bookmark.png", font, new SaveButtonListener(), false);
         addMenuSeparator("File");
         addMenuItem("File/Exit", "Exit application", KeyEvent.VK_X,
-                null, font, null, false);
+                null, font, new ExitButtonListener(), false);
 
         addSubMenu("Edit", font, KeyEvent.VK_E);
         addSubMenu("Edit/Mode", font, KeyEvent.VK_M);
@@ -64,16 +74,16 @@ public class MainWindow extends MainFrame {
         addMenuSeparator("Edit");
         addMenuItem("Edit/Clear", "Clear field", KeyEvent.VK_C,
                 "close.png", font, new clearButtonListener(), false);
-        addMenuItem("Edit/Settings", "Set parameters",
-                KeyEvent.VK_P, "settings.png", font, new SettingsButtonListener(), false);
+        addMenuItem("Edit/Settings", "Set parameters", KeyEvent.VK_P,
+                "settings.png", font, new SettingsButtonListener(), false);
 
         addSubMenu("View", font, KeyEvent.VK_V);
         addMenuItem("View/Toolbar", "Show/hide toolbar", KeyEvent.VK_T,
-                null, font, null, true);
+                null, font, new ToolbarButtonListener(), true);
         addMenuItem("View/Status Bar", "Show/hide status bar", KeyEvent.VK_B,
-                null, font, null, true);
-        addMenuItem("View/Impact", "Show/hide impact values",
-                KeyEvent.VK_I, null, font, new ImpactButtonListener(), true);
+                null, font, new StatusBarButtonListener(), true);
+        addMenuItem("View/Impact", "Show/hide impact values", KeyEvent.VK_I,
+                null, font, new ImpactButtonListener(), true);
 
         addSubMenu("Simulation", font, KeyEvent.VK_U);
         addMenuItem("Simulation/Run", "Start simulation", KeyEvent.VK_F10,
@@ -83,14 +93,15 @@ public class MainWindow extends MainFrame {
 
         addSubMenu("Help", font, KeyEvent.VK_A);
         addMenuItem("Help/About", "Some information about application", KeyEvent.VK_F8,
-                "about.png", font, null, false);
+                "about.png", font, new AboutButtonListener(), false);
+
+        setSelectedMenuElement("View/Toolbar", true);
     }
 
     private void customizeToolbar() {
         addToolBarButton("File/New");
         addToolBarButton("File/Open");
         addToolBarButton("File/Save");
-        //addToolBarButton("File/Exit");
         addToolBarSeparator();
         addToolBarButton("Edit/Mode/XOR");
         addToolBarButton("Edit/Mode/Replace");
@@ -107,73 +118,247 @@ public class MainWindow extends MainFrame {
         setMode();
     }
 
+    private void customizeStatusBar() {
+        statusPanel = new JPanel();
+        add(statusPanel, BorderLayout.SOUTH);
+        statusPanel.setPreferredSize(new Dimension(getWidth(), 20));
+        statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.X_AXIS));
+        statusPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        statusBar = new JLabel("Ready");
+        statusBar.setFont(font);
+        statusBar.setHorizontalAlignment(SwingConstants.LEFT);
+        statusPanel.add(statusBar);
+        setSelectedMenuElement("View/Status Bar", true);
+    }
+
     private void setMode() {
         getToolBarButton("Edit/Mode/XOR").setSelected(true);
+        setSelectedMenuElement("Edit/Mode/XOR", true);
         fieldView.turnXORModeOn();
     }
 
-    class stepButtonListener implements ActionListener {
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            fieldView.simulationStep();
+    private void fastenChanges(boolean isApplicationClosing) {
+        if (fieldView.isFieldConditionChanged()) {
+            int ret = JOptionPane.showConfirmDialog(locationComponent, "Сохранить изменения?", "Сохранить изменения",
+                    JOptionPane.YES_NO_OPTION);
+            if (ret == JOptionPane.OK_OPTION) {
+                if ((new SaveButtonListener()).actionPerformed()) {
+                    fieldView.fastenFieldConditionChanges();
+                }
+            }
+        }
+        if (isApplicationClosing) {
+            System.exit(0);
         }
     }
 
-    class runButtonListener implements ActionListener {
+    class stepButtonListener implements MouseListener {
 
-        private boolean isSimulationOn = false;
+        private String tooltip = "Make one simulation step";
+
+        void actionPerformed() {
+            fieldView.simulationStep();
+        }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void mouseClicked(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+    }
+
+    class runButtonListener implements MouseListener {
+
+        private String tooltip = "Start simulation";
+        private boolean isSimulationOn = false;
+
+        private void actionPerformed() {
             if (isSimulationOn) {
                 fieldView.stopSimulation();
                 isSimulationOn = false;
                 getToolBarButton("Edit/Clear").setEnabled(true);
+                setEnabledMenuElement("Edit/Clear", true);
                 getToolBarButton("Edit/Settings").setEnabled(true);
+                setEnabledMenuElement("Edit/Settings", true);
                 getToolBarButton("Simulation/Next").setEnabled(true);
+                setEnabledMenuElement("Simulation/Next", true);
             } else {
                 fieldView.runSimulation();
                 isSimulationOn = true;
                 getToolBarButton("Edit/Clear").setEnabled(false);
+                setEnabledMenuElement("Edit/Clear", false);
                 getToolBarButton("Edit/Settings").setEnabled(false);
+                setEnabledMenuElement("Edit/Settings", false);
                 getToolBarButton("Simulation/Next").setEnabled(false);
+                setEnabledMenuElement("Simulation/Next", false);
             }
         }
-    }
-
-    class clearButtonListener implements ActionListener {
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+    }
+
+    class clearButtonListener implements MouseListener {
+
+        private String tooltip = "Clear field";
+
+        void actionPerformed() {
             fieldView.clearField();
         }
-    }
-
-    class XORButtonListener implements ActionListener {
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+    }
+
+    class XORButtonListener implements MouseListener {
+
+        private String tooltip = "Turn invert cells states mode on";
+
+        void actionPerformed() {
             getToolBarButton("Edit/Mode/XOR").setSelected(true);
+            setSelectedMenuElement("Edit/Mode/XOR", true);
             getToolBarButton("Edit/Mode/Replace").setSelected(false);
+            setSelectedMenuElement("Edit/Mode/Replace", false);
             fieldView.turnXORModeOn();
         }
-    }
-
-    class replaceButtonListener implements ActionListener {
 
         @Override
-        public void actionPerformed(ActionEvent e) {
-            getToolBarButton("Edit/Mode/XOR").setSelected(false);
-            getToolBarButton("Edit/Mode/Replace").setSelected(true);
-            fieldView.turnXORModeOff();
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            if (isSelectedMenuElement("Edit/Mode/XOR")) {
+                tooltip = "Turn resurrecting cells mode on";
+            } else {
+                tooltip = "Turn invert cells states mode on";
+            }
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
         }
     }
 
-    class SettingsButtonListener implements ActionListener {
+    class replaceButtonListener implements MouseListener {
 
-        SettingsDialog dialog = new SettingsDialog(new OKButtonListener(), new CancelButtonListener());
-        ;
+        private String tooltip = "Turn resurrecting cells mode on";
+
+        void actionPerformed() {
+            getToolBarButton("Edit/Mode/XOR").setSelected(false);
+            setSelectedMenuElement("Edit/Mode/XOR", false);
+            getToolBarButton("Edit/Mode/Replace").setSelected(true);
+            setSelectedMenuElement("Edit/Mode/Replace", true);
+            fieldView.turnXORModeOff();
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            if (isSelectedMenuElement("Edit/Mode/Replace")) {
+                tooltip = "Turn invert cells states mode on";
+            } else {
+                tooltip = "Turn resurrecting cells mode on";
+            }
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+    }
+
+    class SettingsButtonListener implements MouseListener {
+
+        private String tooltip = "Customize game's parameters";
+        private SettingsDialog dialog;
 
         Double curBIRTH_BEGIN;
         Double curBIRTH_END;
@@ -188,8 +373,8 @@ public class MainWindow extends MainFrame {
         int curRowsCount;
         int curColumnsCount;
 
-        @Override
-        public void actionPerformed(ActionEvent e) {
+        protected void actionPerformed() {
+            dialog = new SettingsDialog();
             curBIRTH_BEGIN = controller.getBIRTH_BEGIN();
             curBIRTH_END = controller.getBIRTH_END();
             curLIVE_BEGIN = controller.getLIVE_BEGIN();
@@ -215,9 +400,13 @@ public class MainWindow extends MainFrame {
             dialog.setGridWidth(curGridWidth);
             dialog.setTimerPeriod(curTimerPeriod);
             dialog.setMode(curXORMode);
+            dialog.setCheckModeOn();
+            dialog.setOkButtonListener(new OKButtonListener());
+            dialog.setCancelButtonListener(new CancelButtonListener());
+
             dialog.pack();
             dialog.setResizable(false);
-            dialog.setLocationRelativeTo(fieldView);
+            dialog.setLocationRelativeTo(locationComponent);
             dialog.setVisible(true);
         }
 
@@ -286,41 +475,121 @@ public class MainWindow extends MainFrame {
                 dialog.dispose();
             }
         }
-    }
-
-    class ImpactButtonListener implements ActionListener {
-
-        private boolean isSelected = false;
 
         @Override
-        public void actionPerformed(ActionEvent e) {
-            if (!isSelected) {
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+    }
+
+    class ImpactButtonListener implements MouseListener {
+
+        private String tooltip = "Show/hide impact values";
+
+        private void actionPerformed() {
+            if (!isSelectedMenuElement("View/Impact")) {
                 getToolBarButton("View/Impact").setSelected(true);
                 fieldView.showImpacts();
-                isSelected = true;
             } else {
                 getToolBarButton("View/Impact").setSelected(false);
                 fieldView.hideImpacts();
-                isSelected = false;
             }
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            if (!isSelectedMenuElement("View/Impact")) {
+                tooltip = "Show impact values";
+            } else {
+                tooltip = "Hide impact values";
+            }
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
         }
     }
 
     class NewButtonListener extends SettingsButtonListener {
 
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            super.actionPerformed(e);
+        private String tooltip = "Create a new file";
+
+        protected void actionPerformed() {
+            fastenChanges(false);
+
+            super.actionPerformed();
             fieldView.clearField();
             fieldView.hideImpacts();
         }
 
-    }
-
-    class OpenButtonListener implements ActionListener {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+        }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+
+    }
+
+    class OpenButtonListener implements MouseListener {
+
+        private String tooltip = "Open source file";
+
+        private void actionPerformed() {
+            fastenChanges(false);
+
             File openFile = getOpenFileName(null, null);
             if (openFile != null) {
                 fieldView.clearField();
@@ -352,22 +621,50 @@ public class MainWindow extends MainFrame {
                         lineCount++;
                     }
                     fieldView.updateField();
+                    fieldView.fastenFieldConditionChanges();
                 } catch (Exception exception) {
-                    fieldView.clearField();
-                    System.err.println("Wrong input file format");              //TODO!!
+                    String messageText = "Не удалось открыть файл";
+                    JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                            JOptionPane.ERROR_MESSAGE);
                 }
             }
         }
 
-    }
-
-    class SaveButtonListener implements ActionListener {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+        }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+
+    }
+
+    class SaveButtonListener implements MouseListener {
+
+        private String tooltip = "Save current state in file";
+
+        private boolean actionPerformed() {
             File saveFile = getSaveFileName("txt", "Text files");
             if (saveFile != null) {
                 try {
+                    fieldView.fastenFieldConditionChanges();
                     BufferedWriter writer = new BufferedWriter(new FileWriter(saveFile));
                     writer.write(controller.getFieldHeight() + " " + controller.getFieldWidth() + "\n");
                     writer.write(fieldView.getGridWidth() + "\n");
@@ -379,9 +676,197 @@ public class MainWindow extends MainFrame {
                         writer.write(curAliveCell.getKey() + " " + curAliveCell.getValue() + "\n");
                     }
                     writer.close();
-                } catch (IOException e1) {
+                } catch (IOException ignored) {
                 }
+                return true;
             }
+            return false;
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+    }
+
+    class AboutButtonListener implements MouseListener {
+
+        String tooltip = "Some information about application";
+
+        private void actionPerformed() {
+            AboutDialog dialog = new AboutDialog();
+            dialog.pack();
+            dialog.setResizable(false);
+            dialog.setLocationRelativeTo(locationComponent);
+            dialog.setVisible(true);
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+    }
+
+    class ExitButtonListener implements MouseListener {
+
+        String tooltip = "Exit application";
+
+        private void actionPerformed() {
+            fastenChanges(true);
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+    }
+
+    class ToolbarButtonListener implements MouseListener {
+
+        private String tooltip = "Show/hide toolbar";
+
+        private void actionPerformed() {
+            if (!isSelectedMenuElement("View/Toolbar")) {
+                showToolbar();
+            } else {
+                hideToolbar();
+            }
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            if (!isSelectedMenuElement("View/Toolbar")) {
+                tooltip = "Show toolbar";
+            } else {
+                tooltip = "Hide toolbar";
+            }
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+    }
+
+    class StatusBarButtonListener implements MouseListener {
+
+        String tooltip = "Exit application";
+
+        private void actionPerformed() {
+            if (!isSelectedMenuElement("View/Status Bar")) {
+                statusPanel.setVisible(true);
+            } else {
+                statusPanel.setVisible(false);
+            }
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            actionPerformed();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            if (!isSelectedMenuElement("View/Status Bar")) {
+                tooltip = "Show status bar";
+            } else {
+                tooltip = "Hide status bar";
+            }
+            statusBar.setText(tooltip);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText("Ready");
+        }
+    }
+
+    class MainWindowListener extends WindowAdapter {
+        @Override
+        public void windowClosing(WindowEvent e) {
+            fastenChanges(true);
         }
 
     }

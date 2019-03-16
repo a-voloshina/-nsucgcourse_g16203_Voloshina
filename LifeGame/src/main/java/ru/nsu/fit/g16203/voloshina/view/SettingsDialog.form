@@ -150,6 +150,7 @@
                   <inverted value="false"/>
                   <maximum value="100"/>
                   <maximumSize width="90" height="16"/>
+                  <minimum value="1"/>
                   <minimumSize width="90" height="16"/>
                   <paintLabels value="false"/>
                   <paintTicks value="false"/>
@@ -168,6 +169,7 @@
                 </constraints>
                 <properties>
                   <maximumSize width="200" height="16"/>
+                  <minimum value="1"/>
                   <minimumSize width="90" height="16"/>
                 </properties>
               </component>
@@ -183,6 +185,7 @@
                 <properties>
                   <maximum value="50"/>
                   <maximumSize width="200" height="16"/>
+                  <minimum value="1"/>
                   <minimumSize width="90" height="16"/>
                 </properties>
               </component>
@@ -198,6 +201,7 @@
                 <properties>
                   <maximum value="10"/>
                   <maximumSize width="200" height="16"/>
+                  <minimum value="1"/>
                   <minimumSize width="90" height="16"/>
                 </properties>
               </component>
@@ -213,6 +217,7 @@
                 <properties>
                   <maximum value="10000"/>
                   <maximumSize width="200" height="16"/>
+                  <minimum value="1"/>
                   <minimumSize width="90" height="16"/>
                 </properties>
               </component>
