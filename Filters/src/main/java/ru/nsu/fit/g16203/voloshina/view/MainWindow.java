@@ -1,8 +1,12 @@
 package ru.nsu.fit.g16203.voloshina.view;
 
+import ru.nsu.fit.g16203.voloshina.view.zones.PartZone;
+import ru.nsu.fit.g16203.voloshina.view.zones.SourceZone;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
@@ -10,10 +14,11 @@ import java.io.File;
 public class MainWindow extends MainFrame {
 
     private Font font = new Font("TimesNewRoman", Font.PLAIN, 14);
+    private String defaultTooltip = "Ready";
 
     private JPanel zonesPanel = new JPanel();
     private SourceZone sourceZone;
-    private JPanel partZone;
+    private PartZone partZone;
     private JPanel resultZone;
     private JPanel statusPanel;
     private JLabel statusBar;
@@ -37,7 +42,7 @@ public class MainWindow extends MainFrame {
         MainWindow mainWindow = new MainWindow();
     }
 
-    private void customizeMenu(){
+    private void customizeMenu() {
         addSubMenu("File", font, KeyEvent.VK_I);
         addMenuItem("File/New", "Create new file", KeyEvent.VK_N,
                 "new.png", font, null, false);
@@ -47,7 +52,7 @@ public class MainWindow extends MainFrame {
                 "save.png", font, null, false);
         addMenuSeparator("File");
         addMenuItem("File/Exit", "Exit application", KeyEvent.VK_X,
-                null, font, new ExitButtonListener(), false);
+                "logout.png", font, new ExitButtonListener(), false);
 
         addSubMenu("View", font, KeyEvent.VK_V);
         addMenuItem("View/Toolbar", "Show/hide toolbar", KeyEvent.VK_T,
@@ -56,6 +61,13 @@ public class MainWindow extends MainFrame {
                 null, font, new StatusBarButtonListener(), true);
 
         addSubMenu("Edit", font, KeyEvent.VK_E);
+        addMenuItem("Edit/Select", "Select a part of image to see int zone B", KeyEvent.VK_S,
+                null, font, new SelectMouseListener(), true);
+        addMenuItem("Edit/Copy right", "Copy image from zone B to zone C", KeyEvent.VK_RIGHT,
+                null, font, null, false);
+        addMenuItem("Edit/Copy left", "Copy image from zone C to zone B", KeyEvent.VK_LEFT,
+                null, font, null, false);
+        addMenuSeparator("Edit");
         addMenuItem("Edit/Zoom", "Double image", KeyEvent.VK_Z,
                 null, font, null, false);
         addMenuItem("Edit/Blur", "Smooth image", KeyEvent.VK_Z,
@@ -103,10 +115,14 @@ public class MainWindow extends MainFrame {
                 "about.png", font, new AboutButtonListener(), false);
     }
 
-    private void customizeToolbar(){
+    private void customizeToolbar() {
         addToolBarButton("File/New");
         addToolBarButton("File/Open");
         addToolBarButton("File/Save");
+        addToolBarSeparator();
+        addToolBarButton("Edit/Select", "select.png");
+        addToolBarButton("Edit/Copy right", "right-arrow.png");
+        addToolBarButton("Edit/Copy left", "left-arrow.png");
         addToolBarSeparator();
         addToolBarButton("Help/About");
 
@@ -126,14 +142,10 @@ public class MainWindow extends MainFrame {
         setSelectedMenuElement("View/Status Bar", true);
     }
 
-    private void customizeZones(){
+    private void customizeZones() {
         zonesPanel.setLayout(new FlowLayout(FlowLayout.LEADING, 10, 10));
-        sourceZone = new SourceZone();
-        sourceZone.setPreferredSize(new Dimension(350, 350));
-        sourceZone.setBorder(BorderFactory.createDashedBorder(Color.black, 4, 2));
-        partZone = new JPanel();
-        partZone.setPreferredSize(new Dimension(350, 350));
-        partZone.setBorder(BorderFactory.createDashedBorder(Color.black, 4, 2));
+        partZone = new PartZone();
+        sourceZone = new SourceZone(partZone);
         resultZone = new JPanel();
         resultZone.setPreferredSize(new Dimension(350, 350));
         resultZone.setBorder(BorderFactory.createDashedBorder(Color.black, 4, 2));
@@ -150,8 +162,8 @@ public class MainWindow extends MainFrame {
         private void actionPerformed() {
             //File openFile = getOpenFileName("png", "portable network graphics images");
             File openFile = getOpenFileName(null, null);
-            if(openFile != null){
-                sourceZone.addImage(openFile);
+            if (openFile != null) {
+                sourceZone.addImage(openFile, partZone::clear);
             } else {
                 String messageText = "Не удалось открыть файл";
                 JOptionPane.showMessageDialog(null, messageText, "Ошибка",
@@ -261,11 +273,10 @@ public class MainWindow extends MainFrame {
         }
     }
 
-    class StatusBarButtonListener implements MouseListener {
+    class StatusBarButtonListener extends MouseAdapter {
 
-        String tooltip = "Exit application";
-
-        private void actionPerformed() {
+        @Override
+        public void mousePressed(MouseEvent e) {
             if (!isSelectedMenuElement("View/Status Bar")) {
                 statusPanel.setVisible(true);
             } else {
@@ -274,32 +285,17 @@ public class MainWindow extends MainFrame {
         }
 
         @Override
-        public void mouseClicked(MouseEvent e) {
-        }
-
-        @Override
-        public void mousePressed(MouseEvent e) {
-            actionPerformed();
-        }
-
-        @Override
-        public void mouseReleased(MouseEvent e) {
-
-        }
-
-        @Override
         public void mouseEntered(MouseEvent e) {
             if (!isSelectedMenuElement("View/Status Bar")) {
-                tooltip = "Show status bar";
+                statusBar.setText("Show status bar");
             } else {
-                tooltip = "Hide status bar";
+                statusBar.setText("Hide status bar");
             }
-            statusBar.setText(tooltip);
         }
 
         @Override
         public void mouseExited(MouseEvent e) {
-            statusBar.setText("Ready");
+            statusBar.setText(defaultTooltip);
         }
     }
 
@@ -337,6 +333,36 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseExited(MouseEvent e) {
             statusBar.setText("Ready");
+        }
+    }
+
+    class SelectMouseListener extends MouseAdapter {
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if(sourceZone.isImageAdded()){
+                if(isSelectedMenuElement("Edit/Select")){
+                    getToolBarButton("Edit/Select").setSelected(false);
+                    setSelectedMenuElement("Edit/Select", false);
+                    sourceZone.stopSelectImagePart();
+                } else {
+                    getToolBarButton("Edit/Select").setSelected(true);
+                    setSelectedMenuElement("Edit/Select", true);
+                    sourceZone.selectImagePart(partZone::setImage);
+                }
+            } else {
+                setSelectedMenuElement("Edit/Select", false);
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Select").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
         }
     }
 }
