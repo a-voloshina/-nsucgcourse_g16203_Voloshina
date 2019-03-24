@@ -1,6 +1,9 @@
 package ru.nsu.fit.g16203.voloshina.view;
 
+import ru.nsu.fit.g16203.voloshina.filters.BlackWhiteFilter;
+import ru.nsu.fit.g16203.voloshina.filters.NegativeFilter;
 import ru.nsu.fit.g16203.voloshina.view.zones.PartZone;
+import ru.nsu.fit.g16203.voloshina.view.zones.ResultZone;
 import ru.nsu.fit.g16203.voloshina.view.zones.SourceZone;
 
 import javax.swing.*;
@@ -10,6 +13,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.io.IOException;
 
 public class MainWindow extends MainFrame {
 
@@ -19,7 +23,7 @@ public class MainWindow extends MainFrame {
     private JPanel zonesPanel = new JPanel();
     private SourceZone sourceZone;
     private PartZone partZone;
-    private JPanel resultZone;
+    private ResultZone resultZone;
     private JPanel statusPanel;
     private JLabel statusBar;
     private Component locationComponent;
@@ -45,7 +49,7 @@ public class MainWindow extends MainFrame {
     private void customizeMenu() {
         addSubMenu("File", font, KeyEvent.VK_I);
         addMenuItem("File/New", "Create new file", KeyEvent.VK_N,
-                "new.png", font, null, false);
+                "new.png", font, new NewButtonListener(), false);
         addMenuItem("File/Open", "Open source file", KeyEvent.VK_O,
                 "open.png", font, new OpenButtonListener(), false);
         addMenuItem("File/Save", "Save current state in file", KeyEvent.VK_S,
@@ -64,9 +68,9 @@ public class MainWindow extends MainFrame {
         addMenuItem("Edit/Select", "Select a part of image to see int zone B", KeyEvent.VK_S,
                 null, font, new SelectMouseListener(), true);
         addMenuItem("Edit/Copy right", "Copy image from zone B to zone C", KeyEvent.VK_RIGHT,
-                null, font, null, false);
+                null, font, new CopyRightMouseListener(), false);
         addMenuItem("Edit/Copy left", "Copy image from zone C to zone B", KeyEvent.VK_LEFT,
-                null, font, null, false);
+                null, font, new CopyLeftMouseListener(), false);
         addMenuSeparator("Edit");
         addMenuItem("Edit/Zoom", "Double image", KeyEvent.VK_Z,
                 null, font, null, false);
@@ -82,9 +86,9 @@ public class MainWindow extends MainFrame {
                 null, font, null, false);
         addSubMenu("Edit/Canal", font, KeyEvent.VK_E);
         addMenuItem("Edit/Canal/Black and white", "Translate color image to black and white(greyscale)", KeyEvent.VK_X,
-                null, font, null, false);
+                null, font, new BlackWhiteButtonMouseListener(), false);
         addMenuItem("Edit/Canal/Negative", "Convert image to negative", KeyEvent.VK_P,
-                null, font, null, false);
+                null, font, new NegativeButtonMouseListener(), false);
         addMenuItem("Edit/Canal/Delete R-chanel", "Set to zero the red component of the image", KeyEvent.VK_P,
                 null, font, null, false);
         addMenuItem("Edit/Canal/Delete G-chanel", "Set to zero the green component of the image", KeyEvent.VK_P,
@@ -124,6 +128,9 @@ public class MainWindow extends MainFrame {
         addToolBarButton("Edit/Copy right", "right-arrow.png");
         addToolBarButton("Edit/Copy left", "left-arrow.png");
         addToolBarSeparator();
+        addToolBarButton("Edit/Canal/Black and white", "blackwhite.png");
+        addToolBarButton("Edit/Canal/Negative", "exposure.png");
+        addToolBarSeparator();
         addToolBarButton("Help/About");
 
         setSelectedMenuElement("View/Toolbar", true);
@@ -145,14 +152,31 @@ public class MainWindow extends MainFrame {
     private void customizeZones() {
         zonesPanel.setLayout(new FlowLayout(FlowLayout.LEADING, 10, 10));
         partZone = new PartZone();
-        sourceZone = new SourceZone(partZone);
-        resultZone = new JPanel();
-        resultZone.setPreferredSize(new Dimension(350, 350));
-        resultZone.setBorder(BorderFactory.createDashedBorder(Color.black, 4, 2));
+        sourceZone = new SourceZone();
+        resultZone = new ResultZone();
         zonesPanel.add(sourceZone);
         zonesPanel.add(partZone);
         zonesPanel.add(resultZone);
         add(zonesPanel);
+    }
+
+    class NewButtonListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            sourceZone.clear();
+            partZone.clear();
+            resultZone.clear();
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("File/New").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
     }
 
     class OpenButtonListener implements MouseListener {
@@ -163,7 +187,16 @@ public class MainWindow extends MainFrame {
             //File openFile = getOpenFileName("png", "portable network graphics images");
             File openFile = getOpenFileName(null, null);
             if (openFile != null) {
-                sourceZone.addImage(openFile, partZone::clear);
+                try {
+                    sourceZone.addImage(openFile);
+                    partZone.clear();
+                    resultZone.clear();
+                } catch (IOException e) {
+                    String messageText = "Формат файла не поддерживается. Поодерживаемый формат изображения -  BMP/PNG, " +
+                            "24 бита/пиксель";
+                    JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                            JOptionPane.ERROR_MESSAGE);
+                }
             } else {
                 String messageText = "Не удалось открыть файл";
                 JOptionPane.showMessageDialog(null, messageText, "Ошибка",
@@ -340,8 +373,8 @@ public class MainWindow extends MainFrame {
 
         @Override
         public void mousePressed(MouseEvent e) {
-            if(sourceZone.isImageAdded()){
-                if(isSelectedMenuElement("Edit/Select")){
+            if (sourceZone.isImageAdded()) {
+                if (isSelectedMenuElement("Edit/Select")) {
                     getToolBarButton("Edit/Select").setSelected(false);
                     setSelectedMenuElement("Edit/Select", false);
                     sourceZone.stopSelectImagePart();
@@ -365,4 +398,83 @@ public class MainWindow extends MainFrame {
             statusBar.setText(defaultTooltip);
         }
     }
+
+    class CopyRightMouseListener extends MouseAdapter {
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(partZone.getImage());
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Copy right").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class CopyLeftMouseListener extends MouseAdapter {
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (resultZone.isImageAdded()) {
+                partZone.setImage(resultZone.getImage());
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Copy left").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class NegativeButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new NegativeFilter().apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Canal/Negative").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class BlackWhiteButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new BlackWhiteFilter().apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Canal/Black and white").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
 }

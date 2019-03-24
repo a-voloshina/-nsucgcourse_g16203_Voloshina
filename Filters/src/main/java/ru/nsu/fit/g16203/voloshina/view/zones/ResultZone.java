@@ -4,15 +4,16 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-public class PartZone extends JPanel {
+public class ResultZone extends JPanel {
 
     private BufferedImage image;
+
     private int panelWidth = 350;
     private int panelHeight = 350;
 
     private boolean isImageAdded = false;
 
-    public PartZone() {
+    public ResultZone() {
         setPreferredSize(new Dimension(panelWidth, panelHeight));
         setSize(new Dimension(panelWidth, panelHeight));
         setBorder(BorderFactory.createDashedBorder(Color.black, 4, 2));
@@ -25,12 +26,6 @@ public class PartZone extends JPanel {
         g.drawImage(image, 1, 1, image.getWidth() - 2, image.getHeight() - 2, null);
     }
 
-    public void clear(){
-        image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        isImageAdded = false;
-        repaint();
-    }
-
     public BufferedImage getImage() {
         return image;
     }
@@ -41,8 +36,13 @@ public class PartZone extends JPanel {
         repaint();
     }
 
+    public void clear() {
+        image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        isImageAdded = false;
+        repaint();
+    }
+
     public boolean isImageAdded() {
         return isImageAdded;
     }
-
 }

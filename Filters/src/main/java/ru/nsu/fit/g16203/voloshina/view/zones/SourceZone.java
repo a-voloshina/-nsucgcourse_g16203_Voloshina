@@ -13,7 +13,6 @@ import java.io.IOException;
 
 public class SourceZone extends JPanel {
 
-    private PartZone partZone;
     private BufferedImage image;
     private BufferedImage rectImage;
     private File imageFile;
@@ -26,8 +25,7 @@ public class SourceZone extends JPanel {
 
     private SourceZoneMouseMotionListener mouseListener = new SourceZoneMouseMotionListener();
 
-    public SourceZone(PartZone partZone) {
-        this.partZone = partZone;
+    public SourceZone() {
         setPreferredSize(new Dimension(panelWidth, panelHeight));
         setSize(new Dimension(panelWidth, panelHeight));
         setBorder(BorderFactory.createDashedBorder(Color.black, 4, 2));
@@ -42,9 +40,11 @@ public class SourceZone extends JPanel {
         g.drawImage(rectImage, 1, 1, rectImage.getWidth() - 2, rectImage.getHeight() - 2, null);
     }
 
-    private void setImage() {
-        try {
+    private void setImage() throws IOException {
             image = ImageIO.read(imageFile);
+        if (image.getColorModel().getPixelSize() != 24) {
+            throw new IOException();
+        }
             double kx = (double) image.getWidth() / panelWidth;
             double ky = (double) image.getHeight() / panelHeight;
             k = kx > ky ? kx : ky;
@@ -61,9 +61,6 @@ public class SourceZone extends JPanel {
             xorRectWidth = (int) (panelWidth / k < rectImage.getWidth()-1 ? panelWidth / k : rectImage.getWidth() - 1);
             xorRectHeight = (int) (panelHeight / k < rectImage.getHeight()-1 ? panelHeight / k : rectImage.getHeight() - 1);
             repaint();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private BufferedImage getImagePart(int xorRectX, int xorRectY) {
@@ -81,22 +78,29 @@ public class SourceZone extends JPanel {
         g2d.drawRect(x, y, width, height);
     }
 
-    public void addImage(File imageFile, IFunc fn) {
+    public void addImage(File imageFile) throws IOException {
         this.imageFile = imageFile;
         setImage();
-        fn.apply();
     }
 
     public void selectImagePart(ISelect fn){
         mouseListener.fun = fn;
         addMouseMotionListener(mouseListener);
-        //drawXorRect(0, 0, xorRectWidth, xorRectHeight);
         repaint();
     }
 
     public void stopSelectImagePart(){
+        try {
+            setImage();
+        } catch (IOException e) {
+            return;
+        }
         removeMouseMotionListener(mouseListener);
-        setImage();
+    }
+
+    public void clear() {
+        rectImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        repaint();
     }
 
     public boolean isImageAdded(){
@@ -112,7 +116,11 @@ public class SourceZone extends JPanel {
             if (imageFile != null) {
                 int x = e.getX() - 1;
                 int y = e.getY() - 1;
-                setImage();
+                try {
+                    setImage();
+                } catch (IOException e1) {
+                    return;
+                }
                 int nextXorRectX;
                 int nextXorRectY;
                 if (x < xorRectWidth / 2) {
@@ -131,7 +139,6 @@ public class SourceZone extends JPanel {
                 }
                 drawXorRect(nextXorRectX, nextXorRectY, xorRectWidth, xorRectHeight);
                 repaint();
-                //partZone.setImage(getImagePart(nextXorRectX, nextXorRectY));
                 fun.getSelectedImagePart(getImagePart(nextXorRectX, nextXorRectY));
             }
         }
@@ -144,9 +151,5 @@ public class SourceZone extends JPanel {
 
     public interface ISelect {
         void getSelectedImagePart(BufferedImage imagePart);
-    }
-
-    public interface IFunc {
-        void apply();
     }
 }
