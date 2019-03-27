@@ -16,9 +16,11 @@ public abstract class ConvolutionFilter extends Filter {
         int n = (convolutionMatrix.size() - 1) / 2;
         for (int u = -n; u <= n; ++u) {
             for (int v = -n; v <= n; ++v) {
-                newRedColor += convolutionMatrix.get(v).get(u) * (getColor(src, x + u, y + v).getRed());
-                newGreenColor += convolutionMatrix.get(v).get(u) * (getColor(src, x + u, y + v).getGreen());
-                newBlueColor += convolutionMatrix.get(v).get(u) * (getColor(src, x + u, y + v).getBlue());
+                Color color = getColor(src, x + u, y + v);
+                double coef = convolutionMatrix.get(v + n).get(u + n);
+                newRedColor += coef * (color.getRed());
+                newGreenColor += coef * (color.getGreen());
+                newBlueColor += coef * (color.getBlue());
             }
         }
         return new Color(saturate(newRedColor), saturate(newGreenColor), saturate(newBlueColor));

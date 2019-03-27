@@ -105,7 +105,7 @@ public class MainWindow extends MainFrame {
         addMenuItem("Edit/Edges/Sobel's edges", "Sobel's edges selection", KeyEvent.VK_P,
                 null, font, new SobelFilterButtonMouseListener(), false);
         addMenuItem("Edit/Edges/Matrix's edges", "Matrix's edges selection", KeyEvent.VK_P,
-                null, font, null, false);
+                null, font, new MatrixEdgesFilterButtonMouseListener(), false);
 
         addSubMenu("Help", font, KeyEvent.VK_H);
         addMenuItem("Help/About", "Some information about application", KeyEvent.VK_F8,
@@ -128,6 +128,7 @@ public class MainWindow extends MainFrame {
         addToolBarButton("Edit/Dithering/Floyd-Steinberg", "floyd.png");
         addToolBarButton("Edit/Edges/Robert's edges", "roberts.png");
         addToolBarButton("Edit/Edges/Sobel's edges", "sobel.png");
+        addToolBarButton("Edit/Edges/Matrix's edges", "matrix.png");
         addToolBarSeparator();
         addToolBarButton("Help/About");
 
@@ -543,6 +544,25 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseEntered(MouseEvent e) {
             statusBar.setText(getToolBarButton("Edit/Edges/Sobel's edges").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class MatrixEdgesFilterButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new MatrixEdgesFilter(10).apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Edges/Matrix's edges").getToolTipText());
         }
 
         @Override

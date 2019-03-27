@@ -28,10 +28,10 @@ public abstract class Filter {
     }
 
     public int saturate(double color) {
-        if (color > 255F) {
+        if (color > 255.0) {
             return 255;
         }
-        if (color < 0F) {
+        if (color < 0.0) {
             return 0;
         }
         return (int) color;
