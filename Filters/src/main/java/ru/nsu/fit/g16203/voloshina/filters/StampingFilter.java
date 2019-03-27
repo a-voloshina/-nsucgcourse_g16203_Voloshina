@@ -4,9 +4,27 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-public abstract class ConvolutionFilter extends Filter {
+public class StampingFilter extends ConvolutionFilter {
 
-    protected ArrayList<ArrayList<Double>> convolutionMatrix;
+    public StampingFilter() {
+        setConvolutionMatrix(new ArrayList<ArrayList<Double>>() {{
+            add(new ArrayList<Double>() {{
+                add(0.0);
+                add(-1.0);
+                add(0.0);
+            }});
+            add(new ArrayList<Double>() {{
+                add(1.0);
+                add(0.0);
+                add(-1.0);
+            }});
+            add(new ArrayList<Double>() {{
+                add(0.0);
+                add(1.0);
+                add(0.0);
+            }});
+        }});
+    }
 
     @Override
     protected Color getNewColor(BufferedImage src, int x, int y) {
@@ -23,10 +41,6 @@ public abstract class ConvolutionFilter extends Filter {
                 newBlueColor += coef * (color.getBlue());
             }
         }
-        return new Color(saturate(newRedColor), saturate(newGreenColor), saturate(newBlueColor));
-    }
-
-    public void setConvolutionMatrix(ArrayList<ArrayList<Double>> convolutionMatrix) {
-        this.convolutionMatrix = convolutionMatrix;
+        return new Color(saturate(newRedColor + 128), saturate(newGreenColor + 128), saturate(newBlueColor + 128));
     }
 }

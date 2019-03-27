@@ -74,7 +74,7 @@ public class MainWindow extends MainFrame {
         addMenuItem("Edit/Sharpness", "Sharpen image", KeyEvent.VK_Z,
                 null, font, new SharpnessFilterButtonMouseListener(), false);
         addMenuItem("Edit/Emboss", "Emboss", KeyEvent.VK_Z,
-                null, font, null, false);
+                null, font, new EmbossFilterButtonMouseListener(), false);
         addMenuItem("Edit/Watercolor", "Watercolor", KeyEvent.VK_A,
                 null, font, null, false);
         addMenuItem("Edit/Rotate", "Rotate image", KeyEvent.VK_A,
@@ -131,6 +131,7 @@ public class MainWindow extends MainFrame {
         addToolBarButton("Edit/Edges/Matrix's edges", "matrix.png");
         addToolBarButton("Edit/Blur", "blur.png");
         addToolBarButton("Edit/Sharpness", "sharpness.png");
+        addToolBarButton("Edit/Emboss", "stamp.png");
         addToolBarSeparator();
         addToolBarButton("Help/About");
 
@@ -603,6 +604,25 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseEntered(MouseEvent e) {
             statusBar.setText(getToolBarButton("Edit/Sharpness").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class EmbossFilterButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new StampingFilter().apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Emboss").getToolTipText());
         }
 
         @Override
