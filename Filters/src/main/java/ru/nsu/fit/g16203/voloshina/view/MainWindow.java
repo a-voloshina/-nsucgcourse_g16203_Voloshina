@@ -70,7 +70,7 @@ public class MainWindow extends MainFrame {
         addMenuItem("Edit/Zoom", "Double image", KeyEvent.VK_Z,
                 null, font, null, false);
         addMenuItem("Edit/Blur", "Smooth image", KeyEvent.VK_Z,
-                null, font, null, false);
+                null, font, new BlurFilterButtonMouseListener(), false);
         addMenuItem("Edit/Sharpness", "Sharpen image", KeyEvent.VK_Z,
                 null, font, null, false);
         addMenuItem("Edit/Emboss", "Emboss", KeyEvent.VK_Z,
@@ -129,6 +129,7 @@ public class MainWindow extends MainFrame {
         addToolBarButton("Edit/Edges/Robert's edges", "roberts.png");
         addToolBarButton("Edit/Edges/Sobel's edges", "sobel.png");
         addToolBarButton("Edit/Edges/Matrix's edges", "matrix.png");
+        addToolBarButton("Edit/Blur", "blur.png");
         addToolBarSeparator();
         addToolBarButton("Help/About");
 
@@ -563,6 +564,25 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseEntered(MouseEvent e) {
             statusBar.setText(getToolBarButton("Edit/Edges/Matrix's edges").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class BlurFilterButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new BlurFilter().apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Blur").getToolTipText());
         }
 
         @Override
