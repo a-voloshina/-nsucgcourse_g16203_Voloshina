@@ -1,9 +1,6 @@
 package ru.nsu.fit.g16203.voloshina.view;
 
-import ru.nsu.fit.g16203.voloshina.filters.BlackWhiteFilter;
-import ru.nsu.fit.g16203.voloshina.filters.FloydSteinbergFilter;
-import ru.nsu.fit.g16203.voloshina.filters.NegativeFilter;
-import ru.nsu.fit.g16203.voloshina.filters.OrderedDitheringFilter;
+import ru.nsu.fit.g16203.voloshina.filters.*;
 import ru.nsu.fit.g16203.voloshina.view.zones.PartZone;
 import ru.nsu.fit.g16203.voloshina.view.zones.ResultZone;
 import ru.nsu.fit.g16203.voloshina.view.zones.SourceZone;
@@ -14,7 +11,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
@@ -100,14 +96,14 @@ public class MainWindow extends MainFrame {
                 null, font, null, false);
         addSubMenu("Edit/Dithering", font, KeyEvent.VK_E);
         addMenuItem("Edit/Dithering/Floyd-Steinberg", "Apply Floyd-Steinberg dithering algorithm", KeyEvent.VK_F,
-                null, font, new FloydSteinbergMouseListener(), false);
+                null, font, new FloydSteinbergButtonMouseListener(), false);
         addMenuItem("Edit/Dithering/Ordered dither", "Apply ordered dither algorithm", KeyEvent.VK_P,
-                null, font, new OrderedDitheringMouseListener(), false);
+                null, font, new OrderedDitheringButtonMouseListener(), false);
         addSubMenu("Edit/Edges", font, KeyEvent.VK_E);
         addMenuItem("Edit/Edges/Robert's edges", "Robert's edges selection", KeyEvent.VK_P,
-                null, font, null, false);
+                null, font, new RobertsButtonMouseListener(), false);
         addMenuItem("Edit/Edges/Sobel's edges", "Sobel's edges selection", KeyEvent.VK_P,
-                null, font, null, false);
+                null, font, new SobelFilterButtonMouseListener(), false);
         addMenuItem("Edit/Edges/Matrix's edges", "Matrix's edges selection", KeyEvent.VK_P,
                 null, font, null, false);
 
@@ -130,6 +126,8 @@ public class MainWindow extends MainFrame {
         addToolBarSeparator();
         addToolBarButton("Edit/Dithering/Ordered dither", "ordered.png");
         addToolBarButton("Edit/Dithering/Floyd-Steinberg", "floyd.png");
+        addToolBarButton("Edit/Edges/Robert's edges", "roberts.png");
+        addToolBarButton("Edit/Edges/Sobel's edges", "sobel.png");
         addToolBarSeparator();
         addToolBarButton("Help/About");
 
@@ -477,7 +475,7 @@ public class MainWindow extends MainFrame {
         }
     }
 
-    class OrderedDitheringMouseListener extends MouseAdapter {
+    class OrderedDitheringButtonMouseListener extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent e) {
             if (partZone.isImageAdded()) {
@@ -496,24 +494,55 @@ public class MainWindow extends MainFrame {
         }
     }
 
-    class FloydSteinbergMouseListener extends MouseAdapter {
+    class FloydSteinbergButtonMouseListener extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent e) {
             if (partZone.isImageAdded()) {
-                BufferedImage result = new FloydSteinbergFilter().apply(partZone.getImage());
-                if (result != null) {
-                    resultZone.setImage(result);
-                } else {
-                    String messageText = "Невозможно применить фильтр к изображению";
-                    JOptionPane.showMessageDialog(null, messageText, "Ошибка",
-                            JOptionPane.ERROR_MESSAGE);
-                }
+                resultZone.setImage(new FloydSteinbergFilter().apply(partZone.getImage()));
             }
         }
 
         @Override
         public void mouseEntered(MouseEvent e) {
             statusBar.setText(getToolBarButton("Edit/Dithering/Floyd-Steinberg").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class RobertsButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new RobertsFilter(50).apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Edges/Robert's edges").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class SobelFilterButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new SobelFilter(200).apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Edges/Sobel's edges").getToolTipText());
         }
 
         @Override

@@ -8,6 +8,9 @@ public class OrderedDitheringFilter extends DitheringFilter {
 
     private int matrixSize;
     private ArrayList<ArrayList<Double>> ditherMatrix;
+    private int rRed = 256 / (1 << redN - 1);
+    private int rGreen = 256 / (1 << greenN - 1);
+    private int rBlue = 256 / (1 << blueN - 1);
 
     public OrderedDitheringFilter(int n) {
         matrixSize = n;
@@ -25,13 +28,6 @@ public class OrderedDitheringFilter extends DitheringFilter {
             }
             ditherMatrix.add(inner);
         }
-
-        for (int i = 0; i < matrixSize; ++i) {
-            for (int j = 0; j < matrixSize; ++j) {
-                System.out.print(ditherMatrix.get(i).get(j) + " ");
-            }
-            System.out.println();
-        }
     }
 
     private int getTwoDegreeOf(int num) {
@@ -44,23 +40,14 @@ public class OrderedDitheringFilter extends DitheringFilter {
     }
 
     @Override
-    public BufferedImage apply(BufferedImage src) {
-        BufferedImage dst = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        int rRed = 256 / (1 << redN - 1);
-        int rGreen = 256 / (1 << greenN - 1);
-        int rBlue = 256 / (1 << blueN - 1);
-        for (int i = 0; i < src.getHeight(); ++i) {
-            for (int j = 0; j < src.getWidth(); ++j) {
-                Color oldColor = new Color(src.getRGB(j, i));
-                int newRed = nearestPaletteColor((int) (oldColor.getRed() +
-                        rRed * (ditherMatrix.get(i % matrixSize).get(j % matrixSize) - 0.5)), redN);
-                int newGreen = nearestPaletteColor((int) (oldColor.getGreen() +
-                        rGreen * (ditherMatrix.get(i % matrixSize).get(j % matrixSize) - 0.5)), greenN);
-                int newBlue = nearestPaletteColor((int) (oldColor.getBlue() +
-                        rBlue * (ditherMatrix.get(i % matrixSize).get(j % matrixSize) - 0.5)), blueN);
-                dst.setRGB(j, i, new Color(saturate(newRed), saturate(newGreen), saturate(newBlue)).getRGB());
-            }
-        }
-        return dst;
+    protected Color getNewColor(BufferedImage src, int x, int y) {
+        Color oldColor = new Color(src.getRGB(x, y));
+        int newRed = nearestPaletteColor((int) (oldColor.getRed() +
+                rRed * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), redN);
+        int newGreen = nearestPaletteColor((int) (oldColor.getGreen() +
+                rGreen * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), greenN);
+        int newBlue = nearestPaletteColor((int) (oldColor.getBlue() +
+                rBlue * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), blueN);
+        return new Color(saturate(newRed), saturate(newGreen), saturate(newBlue));
     }
 }
