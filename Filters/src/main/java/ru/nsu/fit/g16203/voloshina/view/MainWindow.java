@@ -72,7 +72,7 @@ public class MainWindow extends MainFrame {
         addMenuItem("Edit/Blur", "Smooth image", KeyEvent.VK_Z,
                 null, font, new BlurFilterButtonMouseListener(), false);
         addMenuItem("Edit/Sharpness", "Sharpen image", KeyEvent.VK_Z,
-                null, font, null, false);
+                null, font, new SharpnessFilterButtonMouseListener(), false);
         addMenuItem("Edit/Emboss", "Emboss", KeyEvent.VK_Z,
                 null, font, null, false);
         addMenuItem("Edit/Watercolor", "Watercolor", KeyEvent.VK_A,
@@ -130,6 +130,7 @@ public class MainWindow extends MainFrame {
         addToolBarButton("Edit/Edges/Sobel's edges", "sobel.png");
         addToolBarButton("Edit/Edges/Matrix's edges", "matrix.png");
         addToolBarButton("Edit/Blur", "blur.png");
+        addToolBarButton("Edit/Sharpness", "sharpness.png");
         addToolBarSeparator();
         addToolBarButton("Help/About");
 
@@ -583,6 +584,25 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseEntered(MouseEvent e) {
             statusBar.setText(getToolBarButton("Edit/Blur").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class SharpnessFilterButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new SharpeningFilter().apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Sharpness").getToolTipText());
         }
 
         @Override
