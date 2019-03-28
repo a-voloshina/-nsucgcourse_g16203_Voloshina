@@ -68,7 +68,7 @@ public class MainWindow extends MainFrame {
                 null, font, new CopyLeftMouseListener(), false);
         addMenuSeparator("Edit");
         addMenuItem("Edit/Zoom", "Double image", KeyEvent.VK_Z,
-                null, font, null, false);
+                null, font, new ScalingFilterButtonMouseListener(), false);
         addMenuItem("Edit/Blur", "Smooth image", KeyEvent.VK_Z,
                 null, font, new BlurFilterButtonMouseListener(), false);
         addMenuItem("Edit/Sharpness", "Sharpen image", KeyEvent.VK_Z,
@@ -78,24 +78,24 @@ public class MainWindow extends MainFrame {
         addMenuItem("Edit/Watercolor", "Watercolor", KeyEvent.VK_A,
                 null, font, new WatercolorFilterButtonMouseListener(), false);
         addMenuItem("Edit/Rotate", "Rotate image", KeyEvent.VK_A,
-                null, font, null, false);
+                null, font, new RotationFilterButtonMouseListener(), false);
         addSubMenu("Edit/Canal", font, KeyEvent.VK_E);
         addMenuItem("Edit/Canal/Black and white", "Translate color image to black and white(greyscale)", KeyEvent.VK_X,
                 null, font, new BlackWhiteButtonMouseListener(), false);
         addMenuItem("Edit/Canal/Negative", "Convert image to negative", KeyEvent.VK_P,
                 null, font, new NegativeButtonMouseListener(), false);
-        addMenuItem("Edit/Canal/Gamma correction", "Lighten or darken the image", KeyEvent.VK_G,
+        addMenuItem("Edit/Canal/Gamma correction", "Lighten or darken the image using gamma correction", KeyEvent.VK_G,
                 null, font, new GammaCorrectionFilterButtonMouseListener(), false);
-        addMenuItem("Edit/Canal/Delete R-chanel", "Set to zero the red component of the image", KeyEvent.VK_P,
-                null, font, null, false);
-        addMenuItem("Edit/Canal/Delete G-chanel", "Set to zero the green component of the image", KeyEvent.VK_P,
-                null, font, null, false);
-        addMenuItem("Edit/Canal/Delete B-chanel", "Set to zero the blue component of the image", KeyEvent.VK_P,
-                null, font, null, false);
-        addMenuItem("Edit/Canal/Brightness", "Increase the image brightness", KeyEvent.VK_P,
-                null, font, null, false);
-        addMenuItem("Edit/Canal/Contrast", "Increase the image contrast", KeyEvent.VK_P,
-                null, font, null, false);
+//        addMenuItem("Edit/Canal/Delete R-chanel", "Set to zero the red component of the image", KeyEvent.VK_P,
+//                null, font, null, false);
+//        addMenuItem("Edit/Canal/Delete G-chanel", "Set to zero the green component of the image", KeyEvent.VK_P,
+//                null, font, null, false);
+//        addMenuItem("Edit/Canal/Delete B-chanel", "Set to zero the blue component of the image", KeyEvent.VK_P,
+//                null, font, null, false);
+//        addMenuItem("Edit/Canal/Brightness", "Increase the image brightness", KeyEvent.VK_P,
+//                null, font, null, false);
+//        addMenuItem("Edit/Canal/Contrast", "Increase the image contrast", KeyEvent.VK_P,
+//                null, font, null, false);
         addSubMenu("Edit/Dithering", font, KeyEvent.VK_E);
         addMenuItem("Edit/Dithering/Floyd-Steinberg", "Apply Floyd-Steinberg dithering algorithm", KeyEvent.VK_F,
                 null, font, new FloydSteinbergButtonMouseListener(), false);
@@ -139,6 +139,8 @@ public class MainWindow extends MainFrame {
         addToolBarButton("Edit/Emboss", "stamp.png");
         addToolBarButton("Edit/Watercolor", "watercolor.png");
         addToolBarSeparator();
+        addToolBarButton("Edit/Rotate", "rotate.png");
+        addToolBarButton("Edit/Zoom", "resize.png");
         addToolBarButton("Help/About");
 
         setSelectedMenuElement("View/Toolbar", true);
@@ -667,6 +669,44 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseEntered(MouseEvent e) {
             statusBar.setText(getToolBarButton("Edit/Canal/Gamma correction").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class RotationFilterButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new RotationFilter(45).apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Rotate").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class ScalingFilterButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new ScalingFilter(2).apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Zoom").getToolTipText());
         }
 
         @Override

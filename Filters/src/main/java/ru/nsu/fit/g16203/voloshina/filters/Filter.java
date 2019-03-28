@@ -44,7 +44,7 @@ public abstract class Filter {
         return new BufferedImage(colorModel, raster, isAlphaPremultiplied, null);
     }
 
-    protected Color getColor(BufferedImage src, int x, int y) {
+    Color getColor(BufferedImage src, int x, int y) {
         int j = x;
         int i = y;
         if (x < 0) {
