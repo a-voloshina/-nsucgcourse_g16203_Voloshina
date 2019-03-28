@@ -76,7 +76,7 @@ public class MainWindow extends MainFrame {
         addMenuItem("Edit/Emboss", "Emboss", KeyEvent.VK_Z,
                 null, font, new EmbossFilterButtonMouseListener(), false);
         addMenuItem("Edit/Watercolor", "Watercolor", KeyEvent.VK_A,
-                null, font, null, false);
+                null, font, new WatercolorFilterButtonMouseListener(), false);
         addMenuItem("Edit/Rotate", "Rotate image", KeyEvent.VK_A,
                 null, font, null, false);
         addSubMenu("Edit/Canal", font, KeyEvent.VK_E);
@@ -126,12 +126,15 @@ public class MainWindow extends MainFrame {
         addToolBarSeparator();
         addToolBarButton("Edit/Dithering/Ordered dither", "ordered.png");
         addToolBarButton("Edit/Dithering/Floyd-Steinberg", "floyd.png");
+        addToolBarSeparator();
         addToolBarButton("Edit/Edges/Robert's edges", "roberts.png");
         addToolBarButton("Edit/Edges/Sobel's edges", "sobel.png");
         addToolBarButton("Edit/Edges/Matrix's edges", "matrix.png");
+        addToolBarSeparator();
         addToolBarButton("Edit/Blur", "blur.png");
         addToolBarButton("Edit/Sharpness", "sharpness.png");
         addToolBarButton("Edit/Emboss", "stamp.png");
+        addToolBarButton("Edit/Watercolor", "watercolor.png");
         addToolBarSeparator();
         addToolBarButton("Help/About");
 
@@ -623,6 +626,25 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseEntered(MouseEvent e) {
             statusBar.setText(getToolBarButton("Edit/Emboss").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class WatercolorFilterButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new WatercolorFilter(5).apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Watercolor").getToolTipText());
         }
 
         @Override

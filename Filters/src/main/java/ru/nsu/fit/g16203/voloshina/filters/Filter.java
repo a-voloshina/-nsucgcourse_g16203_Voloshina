@@ -17,7 +17,7 @@ public abstract class Filter {
         return dst;
     }
 
-    public int saturate(int color) {
+    protected int saturate(int color) {
         if (color > 255) {
             return 255;
         }
@@ -27,7 +27,7 @@ public abstract class Filter {
         return color;
     }
 
-    public int saturate(double color) {
+    protected int saturate(double color) {
         if (color > 255.0) {
             return 255;
         }
@@ -37,14 +37,14 @@ public abstract class Filter {
         return (int) color;
     }
 
-    public BufferedImage cloneImage(BufferedImage src) {
+    protected BufferedImage cloneImage(BufferedImage src) {
         ColorModel colorModel = src.getColorModel();
         boolean isAlphaPremultiplied = colorModel.isAlphaPremultiplied();
         WritableRaster raster = src.copyData(src.getRaster().createCompatibleWritableRaster());
         return new BufferedImage(colorModel, raster, isAlphaPremultiplied, null);
     }
 
-    public Color getColor(BufferedImage src, int x, int y) {
+    protected Color getColor(BufferedImage src, int x, int y) {
         int j = x;
         int i = y;
         if (x < 0) {
