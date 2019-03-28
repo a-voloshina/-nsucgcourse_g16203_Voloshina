@@ -84,6 +84,8 @@ public class MainWindow extends MainFrame {
                 null, font, new BlackWhiteButtonMouseListener(), false);
         addMenuItem("Edit/Canal/Negative", "Convert image to negative", KeyEvent.VK_P,
                 null, font, new NegativeButtonMouseListener(), false);
+        addMenuItem("Edit/Canal/Gamma correction", "Lighten or darken the image", KeyEvent.VK_G,
+                null, font, new GammaCorrectionFilterButtonMouseListener(), false);
         addMenuItem("Edit/Canal/Delete R-chanel", "Set to zero the red component of the image", KeyEvent.VK_P,
                 null, font, null, false);
         addMenuItem("Edit/Canal/Delete G-chanel", "Set to zero the green component of the image", KeyEvent.VK_P,
@@ -123,6 +125,7 @@ public class MainWindow extends MainFrame {
         addToolBarSeparator();
         addToolBarButton("Edit/Canal/Black and white", "blackwhite.png");
         addToolBarButton("Edit/Canal/Negative", "exposure.png");
+        addToolBarButton("Edit/Canal/Gamma correction", "gamma.png");
         addToolBarSeparator();
         addToolBarButton("Edit/Dithering/Ordered dither", "ordered.png");
         addToolBarButton("Edit/Dithering/Floyd-Steinberg", "floyd.png");
@@ -645,6 +648,25 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseEntered(MouseEvent e) {
             statusBar.setText(getToolBarButton("Edit/Watercolor").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class GammaCorrectionFilterButtonMouseListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded()) {
+                resultZone.setImage(new GammaCorrectionFilter(1.5).apply(partZone.getImage()));
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Canal/Gamma correction").getToolTipText());
         }
 
         @Override
