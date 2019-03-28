@@ -205,12 +205,12 @@ public class MainFrame extends JFrame {
         toolBar.setVisible(true);
     }
 
-    public File getSaveFileName(String extension, String description) {
-        return FileUtils.getSaveFileName(this, extension, description);
+    public File getSaveFileName() {
+        return FileUtils.getSaveFileName(this);
     }
 
-    public File getOpenFileName(String extension, String description) {
-        return FileUtils.getOpenFileName(this, extension, description);
+    public File getOpenFileName(String[] extensions, String description) {
+        return FileUtils.getOpenFileName(this, extensions, description);
     }
 
     public void setSelectedMenuElement(String path, boolean isSelected) {

@@ -2,6 +2,7 @@ package ru.nsu.fit.g16203.voloshina.view;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -11,20 +12,20 @@ public class FileUtils {
 
     private static File dataDirectory = null;
 
-    private static JFileChooser initFileChooser(String extension, String description) {
+    private static JFileChooser initFileChooser(String[] extensions, String description) {
         JFileChooser fileChooser = new JFileChooser();
-        if (extension != null && description != null) {
-            FileFilter filter = new ExtensionFileFilter(extension, description);
+        if (extensions != null && description != null) {
+            FileFilter filter = new FileNameExtensionFilter(description, extensions);
             fileChooser.addChoosableFileFilter(filter);
         }
         fileChooser.setCurrentDirectory(getDataDirectory());
         return fileChooser;
     }
 
-    private static File getFile(String extension, JFileChooser fileChooser) {
+    private static File getFile(String[] extensions, JFileChooser fileChooser) {
         File file = fileChooser.getSelectedFile();
         if (!file.getName().contains("."))
-            file = new File(file.getParent(), file.getName() + "." + extension);
+            file = new File(file.getParent(), file.getName() + "." + extensions[0]);
         return file;
     }
 
@@ -40,24 +41,25 @@ public class FileUtils {
         return dataDirectory;
     }
 
-    public static File getOpenFileName(JFrame parent, String extension, String description) {
-        JFileChooser fileChooser = initFileChooser(extension, description);
+    public static File getOpenFileName(JFrame parent, String[] extensions, String description) {
+        JFileChooser fileChooser = initFileChooser(extensions, description);
 
         if (fileChooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
-            File file = getFile(extension, fileChooser);
+            File file = getFile(extensions, fileChooser);
             dataDirectory = file.getParentFile();
             return file;
         }
         return null;
     }
 
-    public static File getSaveFileName(JFrame parent, String extension, String description) {
-        JFileChooser fileChooser = initFileChooser(extension, description);
+    public static File getSaveFileName(JFrame parent) {
+        JFileChooser fileChooser = initFileChooser(null, null);
+        fileChooser.setDialogTitle("Выберите директорию для сохранения");
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
         if (fileChooser.showSaveDialog(parent) == JFileChooser.APPROVE_OPTION) {
-            File file = getFile(extension, fileChooser);
-            dataDirectory = file.getParentFile();
-            return file;
+            dataDirectory = fileChooser.getSelectedFile();
+            return dataDirectory;
         }
         return null;
     }

@@ -11,4 +11,27 @@ public abstract class DitheringFilter extends Filter {
         return saturate((int) Math.round(Math.round(color / step) * step));
     }
 
+    public int getRedN() {
+        return redN;
+    }
+
+    public void setRedN(int redN) {
+        this.redN = redN;
+    }
+
+    public int getGreenN() {
+        return greenN;
+    }
+
+    public void setGreenN(int greenN) {
+        this.greenN = greenN;
+    }
+
+    public int getBlueN() {
+        return blueN;
+    }
+
+    public void setBlueN(int blueN) {
+        this.blueN = blueN;
+    }
 }

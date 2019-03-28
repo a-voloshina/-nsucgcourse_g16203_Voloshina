@@ -5,14 +5,16 @@ import ru.nsu.fit.g16203.voloshina.view.zones.PartZone;
 import ru.nsu.fit.g16203.voloshina.view.zones.ResultZone;
 import ru.nsu.fit.g16203.voloshina.view.zones.SourceZone;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class MainWindow extends MainFrame {
 
@@ -26,6 +28,8 @@ public class MainWindow extends MainFrame {
     private JPanel statusPanel;
     private JLabel statusBar;
     private Component locationComponent;
+
+    private boolean conditionChanges = false;
 
     public MainWindow() throws HeadlessException {
         super(1105, 500, "FIT_16203_Voloshina_Filters");
@@ -48,7 +52,7 @@ public class MainWindow extends MainFrame {
         addMenuItem("File/Open", "Open source file", KeyEvent.VK_O,
                 "open.png", font, new OpenButtonListener(), false);
         addMenuItem("File/Save", "Save current state in file", KeyEvent.VK_S,
-                "save.png", font, null, false);
+                "save.png", font, new SaveButtonListener(), false);
         addMenuSeparator("File");
         addMenuItem("File/Exit", "Exit application", KeyEvent.VK_X,
                 "logout.png", font, new ExitButtonListener(), false);
@@ -194,8 +198,8 @@ public class MainWindow extends MainFrame {
         String tooltip = "Open source file";
 
         private void actionPerformed() {
-            //File openFile = getOpenFileName("png", "portable network graphics images");
-            File openFile = getOpenFileName(null, null);
+            File openFile = getOpenFileName(new String[]{"png", "bmp"}, "portable network graphics images");
+            //File openFile = getOpenFileName(null, null);
             if (openFile != null) {
                 try {
                     sourceZone.addImage(openFile);
@@ -237,6 +241,47 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseExited(MouseEvent e) {
             statusBar.setText("Ready");
+        }
+    }
+
+    class SaveButtonListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            File saveDir = getSaveFileName();
+            if (saveDir != null && saveDir.isDirectory()) {
+                String result = JOptionPane.showInputDialog(locationComponent, "Введите имя файла");
+                String saveFileName;
+                if (result != null) {
+                    saveFileName = result + ".png";
+                } else {
+                    DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH!mm!ss");
+                    Date date = new Date();
+                    saveFileName = "example" + dateFormat.format(date) + ".png";
+                }
+                try {
+                    File file = new File(saveDir.getAbsoluteFile() + "\\" + saveFileName);
+                    if (!file.exists()) {
+                        file.createNewFile();
+                    }
+                    ImageIO.write(resultZone.getImage(), "png", file);
+                    System.out.println("success: " + saveDir.getPath() + "\\" + saveFileName);
+                } catch (IOException ex) {
+                    String messageText = "Не удалось сохранить изображение";
+                    JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            super.mouseEntered(e);
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            super.mouseExited(e);
         }
     }
 
@@ -507,10 +552,21 @@ public class MainWindow extends MainFrame {
     }
 
     class FloydSteinbergButtonMouseListener extends MouseAdapter {
+        private DitheringDialog dialog = new DitheringDialog();
+
         @Override
         public void mousePressed(MouseEvent e) {
             if (partZone.isImageAdded()) {
-                resultZone.setImage(new FloydSteinbergFilter().apply(partZone.getImage()));
+                FloydSteinbergFilter filter = new FloydSteinbergFilter();
+                dialog.setNr(filter.getRedN());
+                dialog.setNg(filter.getGreenN());
+                dialog.setNb(filter.getBlueN());
+                dialog.setOnOkListener(new OKDitheringButtonListener(filter, dialog));
+
+                dialog.pack();
+                dialog.setResizable(false);
+                dialog.setLocationRelativeTo(locationComponent);
+                dialog.setVisible(true);
             }
         }
 
@@ -523,14 +579,25 @@ public class MainWindow extends MainFrame {
         public void mouseExited(MouseEvent e) {
             statusBar.setText(defaultTooltip);
         }
+
     }
 
     class RobertsButtonMouseListener extends MouseAdapter {
+
         @Override
         public void mousePressed(MouseEvent e) {
+            ParametersDialog dialog = new ParametersDialog(false);
+            dialog.setLabelText("Пороговое значение:");
             if (partZone.isImageAdded()) {
-                resultZone.setImage(new RobertsFilter(50).apply(partZone.getImage()));
+                dialog.setEdge(45);
+                dialog.setOnOkListener(new OnOkRobertsButtonListener(dialog));
+
+                dialog.pack();
+                dialog.setResizable(false);
+                dialog.setLocationRelativeTo(locationComponent);
+                dialog.setVisible(true);
             }
+
         }
 
         @Override
@@ -542,13 +609,46 @@ public class MainWindow extends MainFrame {
         public void mouseExited(MouseEvent e) {
             statusBar.setText(defaultTooltip);
         }
+
+        class OnOkRobertsButtonListener implements ActionListener {
+
+            private ParametersDialog dialog;
+
+            public OnOkRobertsButtonListener(ParametersDialog dialog) {
+                this.dialog = dialog;
+                this.dialog.setLabelText("Пороговое значение:");
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (partZone.isImageAdded()) {
+                    if (dialog.getEdge() != null) {
+                        resultZone.setImage(new RobertsFilter(dialog.getEdge()).apply(partZone.getImage()));
+                    } else {
+                        String messageText = "Введенное значение некорректно";
+                        JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+                dialog.dispose();
+            }
+        }
     }
 
     class SobelFilterButtonMouseListener extends MouseAdapter {
+
         @Override
         public void mousePressed(MouseEvent e) {
+            ParametersDialog dialog = new ParametersDialog(false);
+            dialog.setLabelText("Пороговое значение:");
             if (partZone.isImageAdded()) {
-                resultZone.setImage(new SobelFilter(200).apply(partZone.getImage()));
+                dialog.setEdge(200);
+                dialog.setOnOkListener(new OnOkButtonListener(dialog));
+
+                dialog.pack();
+                dialog.setResizable(false);
+                dialog.setLocationRelativeTo(locationComponent);
+                dialog.setVisible(true);
             }
         }
 
@@ -561,13 +661,44 @@ public class MainWindow extends MainFrame {
         public void mouseExited(MouseEvent e) {
             statusBar.setText(defaultTooltip);
         }
+
+        class OnOkButtonListener implements ActionListener {
+
+            private ParametersDialog dialog;
+
+            public OnOkButtonListener(ParametersDialog dialog) {
+                this.dialog = dialog;
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (partZone.isImageAdded()) {
+                    if (dialog.getEdge() != null) {
+                        resultZone.setImage(new SobelFilter(dialog.getEdge()).apply(partZone.getImage()));
+                    } else {
+                        String messageText = "Введенное значение некорректно";
+                        JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+                dialog.dispose();
+            }
+        }
     }
 
     class MatrixEdgesFilterButtonMouseListener extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent e) {
+            ParametersDialog dialog = new ParametersDialog(false);
+            dialog.setLabelText("Пороговое значение:");
             if (partZone.isImageAdded()) {
-                resultZone.setImage(new MatrixEdgesFilter(10).apply(partZone.getImage()));
+                dialog.setEdge(170);
+                dialog.setOnOkListener(new OnOkMatrixButtonListener(dialog));
+
+                dialog.pack();
+                dialog.setResizable(false);
+                dialog.setLocationRelativeTo(locationComponent);
+                dialog.setVisible(true);
             }
         }
 
@@ -579,6 +710,29 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseExited(MouseEvent e) {
             statusBar.setText(defaultTooltip);
+        }
+
+        class OnOkMatrixButtonListener implements ActionListener {
+
+            private ParametersDialog dialog;
+
+            public OnOkMatrixButtonListener(ParametersDialog dialog) {
+                this.dialog = dialog;
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (partZone.isImageAdded()) {
+                    if (dialog.getEdge() != null) {
+                        resultZone.setImage(new MatrixEdgesFilter(dialog.getEdge()).apply(partZone.getImage()));
+                    } else {
+                        String messageText = "Введенное значение некорректно";
+                        JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+                dialog.dispose();
+            }
         }
     }
 
@@ -661,8 +815,16 @@ public class MainWindow extends MainFrame {
     class GammaCorrectionFilterButtonMouseListener extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent e) {
+            ParametersDialog dialog = new ParametersDialog(true);
+            dialog.setLabelText("Параметр гамма:");
             if (partZone.isImageAdded()) {
-                resultZone.setImage(new GammaCorrectionFilter(1.5).apply(partZone.getImage()));
+                dialog.setDoubleParameter(1.5);
+                dialog.setOnOkListener(new OnOkGammaButtonListener(dialog));
+
+                dialog.pack();
+                dialog.setResizable(false);
+                dialog.setLocationRelativeTo(locationComponent);
+                dialog.setVisible(true);
             }
         }
 
@@ -675,13 +837,46 @@ public class MainWindow extends MainFrame {
         public void mouseExited(MouseEvent e) {
             statusBar.setText(defaultTooltip);
         }
+
+        class OnOkGammaButtonListener implements ActionListener {
+
+            private ParametersDialog dialog;
+
+            public OnOkGammaButtonListener(ParametersDialog dialog) {
+                this.dialog = dialog;
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (partZone.isImageAdded()) {
+                    if (dialog.getDoubleParameter() != null) {
+                        resultZone.setImage(new GammaCorrectionFilter(dialog.getDoubleParameter()).apply(partZone.getImage()));
+                    } else {
+                        String messageText = "Введенное значение некорректно";
+                        JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+                dialog.dispose();
+            }
+        }
     }
 
     class RotationFilterButtonMouseListener extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent e) {
+            ParametersDialog dialog = new ParametersDialog(false);
+            dialog.setLabelText("Угол поворота:");
+            dialog.setMaximum(180);
+            dialog.setMinimum(-180);
             if (partZone.isImageAdded()) {
-                resultZone.setImage(new RotationFilter(45).apply(partZone.getImage()));
+                dialog.setEdge(45);
+                dialog.setOnOkListener(new OnOkRotationButtonListener(dialog));
+
+                dialog.pack();
+                dialog.setResizable(false);
+                dialog.setLocationRelativeTo(locationComponent);
+                dialog.setVisible(true);
             }
         }
 
@@ -693,6 +888,29 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseExited(MouseEvent e) {
             statusBar.setText(defaultTooltip);
+        }
+
+        class OnOkRotationButtonListener implements ActionListener {
+
+            private ParametersDialog dialog;
+
+            public OnOkRotationButtonListener(ParametersDialog dialog) {
+                this.dialog = dialog;
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (partZone.isImageAdded()) {
+                    if (dialog.getEdge() != null) {
+                        resultZone.setImage(new RotationFilter(dialog.getEdge()).apply(partZone.getImage()));
+                    } else {
+                        String messageText = "Введенное значение некорректно";
+                        JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+                dialog.dispose();
+            }
         }
     }
 
@@ -712,6 +930,33 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseExited(MouseEvent e) {
             statusBar.setText(defaultTooltip);
+        }
+    }
+
+
+    class OKDitheringButtonListener implements ActionListener {
+
+        DitheringFilter filter;
+        DitheringDialog dialog;
+
+        public OKDitheringButtonListener(DitheringFilter filter, DitheringDialog dialog) {
+            this.filter = filter;
+            this.dialog = dialog;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (dialog.getNr() != null) {
+                filter.setRedN(dialog.getNr());
+            }
+            if (dialog.getNg() != null) {
+                filter.setGreenN(dialog.getNg());
+            }
+            if (dialog.getNb() != null) {
+                filter.setBlueN(dialog.getNb());
+            }
+            resultZone.setImage(filter.apply(partZone.getImage()));
+            dialog.dispose();
         }
     }
 
