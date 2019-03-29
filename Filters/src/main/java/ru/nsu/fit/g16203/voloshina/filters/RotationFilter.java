@@ -10,6 +10,10 @@ public class RotationFilter extends TransformationFilter {
         this.angle = angle;
     }
 
+    public int getAngle() {
+        return angle;
+    }
+
     @Override
     public BufferedImage apply(BufferedImage src) {
         BufferedImage dst = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);

@@ -198,8 +198,8 @@ public class MainWindow extends MainFrame {
         String tooltip = "Open source file";
 
         private void actionPerformed() {
-            File openFile = getOpenFileName(new String[]{"png", "bmp"}, "portable network graphics images");
-            //File openFile = getOpenFileName(null, null);
+            //File openFile = getOpenFileName(new String[]{"png", "bmp"}, "portable network graphics images");
+            File openFile = getOpenFileName(null, null);
             if (openFile != null) {
                 try {
                     sourceZone.addImage(openFile);
@@ -533,10 +533,24 @@ public class MainWindow extends MainFrame {
     }
 
     class OrderedDitheringButtonMouseListener extends MouseAdapter {
+
+        private int Nr = 3;
+        private int Ng = 3;
+        private int Nb = 2;
+
         @Override
         public void mousePressed(MouseEvent e) {
             if (partZone.isImageAdded()) {
-                resultZone.setImage(new OrderedDitheringFilter(4).apply(partZone.getImage()));
+                DitheringDialog dialog = new DitheringDialog();
+                dialog.setNr(Nr);
+                dialog.setNg(Ng);
+                dialog.setNb(Nb);
+                dialog.setOnOkListener(new OKOrderedDitheringButtonListener(dialog));
+
+                dialog.pack();
+                dialog.setResizable(false);
+                dialog.setLocationRelativeTo(locationComponent);
+                dialog.setVisible(true);
             }
         }
 
@@ -549,19 +563,49 @@ public class MainWindow extends MainFrame {
         public void mouseExited(MouseEvent e) {
             statusBar.setText(defaultTooltip);
         }
+
+        class OKOrderedDitheringButtonListener implements ActionListener {
+            DitheringDialog dialog;
+
+            public OKOrderedDitheringButtonListener(DitheringDialog dialog) {
+                this.dialog = dialog;
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                OrderedDitheringFilter filter = new OrderedDitheringFilter(4);
+                if (dialog.getNr() != null) {
+                    Nr = dialog.getNr();
+                    filter.setRedN(Nr);
+                }
+                if (dialog.getNg() != null) {
+                    Ng = dialog.getNg();
+                    filter.setGreenN(Ng);
+                }
+                if (dialog.getNb() != null) {
+                    Nb = dialog.getNb();
+                    filter.setBlueN(Nb);
+                }
+                resultZone.setImage(filter.apply(partZone.getImage()));
+                dialog.dispose();
+            }
+        }
     }
 
     class FloydSteinbergButtonMouseListener extends MouseAdapter {
-        private DitheringDialog dialog = new DitheringDialog();
+
+        private int Nr = 3;
+        private int Ng = 3;
+        private int Nb = 2;
 
         @Override
         public void mousePressed(MouseEvent e) {
             if (partZone.isImageAdded()) {
-                FloydSteinbergFilter filter = new FloydSteinbergFilter();
-                dialog.setNr(filter.getRedN());
-                dialog.setNg(filter.getGreenN());
-                dialog.setNb(filter.getBlueN());
-                dialog.setOnOkListener(new OKDitheringButtonListener(filter, dialog));
+                DitheringDialog dialog = new DitheringDialog();
+                dialog.setNr(Nr);
+                dialog.setNg(Ng);
+                dialog.setNb(Nb);
+                dialog.setOnOkListener(new OKDitheringButtonListener(dialog));
 
                 dialog.pack();
                 dialog.setResizable(false);
@@ -580,16 +624,45 @@ public class MainWindow extends MainFrame {
             statusBar.setText(defaultTooltip);
         }
 
+        class OKDitheringButtonListener implements ActionListener {
+            DitheringDialog dialog;
+
+            public OKDitheringButtonListener(DitheringDialog dialog) {
+                this.dialog = dialog;
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                FloydSteinbergFilter filter = new FloydSteinbergFilter();
+                if (dialog.getNr() != null) {
+                    Nr = dialog.getNr();
+                    filter.setRedN(Nr);
+                }
+                if (dialog.getNg() != null) {
+                    Ng = dialog.getNg();
+                    filter.setGreenN(Ng);
+                }
+                if (dialog.getNb() != null) {
+                    Nb = dialog.getNb();
+                    filter.setBlueN(Nb);
+                }
+                resultZone.setImage(filter.apply(partZone.getImage()));
+                dialog.dispose();
+            }
+        }
+
     }
 
     class RobertsButtonMouseListener extends MouseAdapter {
+
+        private int edge = 45;
 
         @Override
         public void mousePressed(MouseEvent e) {
             ParametersDialog dialog = new ParametersDialog(false);
             dialog.setLabelText("Пороговое значение:");
             if (partZone.isImageAdded()) {
-                dialog.setEdge(45);
+                dialog.setEdge(edge);
                 dialog.setOnOkListener(new OnOkRobertsButtonListener(dialog));
 
                 dialog.pack();
@@ -623,7 +696,9 @@ public class MainWindow extends MainFrame {
             public void actionPerformed(ActionEvent e) {
                 if (partZone.isImageAdded()) {
                     if (dialog.getEdge() != null) {
-                        resultZone.setImage(new RobertsFilter(dialog.getEdge()).apply(partZone.getImage()));
+                        RobertsFilter filter = new RobertsFilter(dialog.getEdge());
+                        edge = filter.getThreshold();
+                        resultZone.setImage(filter.apply(partZone.getImage()));
                     } else {
                         String messageText = "Введенное значение некорректно";
                         JOptionPane.showMessageDialog(null, messageText, "Ошибка",
@@ -637,12 +712,14 @@ public class MainWindow extends MainFrame {
 
     class SobelFilterButtonMouseListener extends MouseAdapter {
 
+        private int edge = 200;
+
         @Override
         public void mousePressed(MouseEvent e) {
             ParametersDialog dialog = new ParametersDialog(false);
             dialog.setLabelText("Пороговое значение:");
             if (partZone.isImageAdded()) {
-                dialog.setEdge(200);
+                dialog.setEdge(edge);
                 dialog.setOnOkListener(new OnOkButtonListener(dialog));
 
                 dialog.pack();
@@ -674,7 +751,9 @@ public class MainWindow extends MainFrame {
             public void actionPerformed(ActionEvent e) {
                 if (partZone.isImageAdded()) {
                     if (dialog.getEdge() != null) {
-                        resultZone.setImage(new SobelFilter(dialog.getEdge()).apply(partZone.getImage()));
+                        SobelFilter filter = new SobelFilter(dialog.getEdge());
+                        edge = filter.getThreshold();
+                        resultZone.setImage(filter.apply(partZone.getImage()));
                     } else {
                         String messageText = "Введенное значение некорректно";
                         JOptionPane.showMessageDialog(null, messageText, "Ошибка",
@@ -687,12 +766,15 @@ public class MainWindow extends MainFrame {
     }
 
     class MatrixEdgesFilterButtonMouseListener extends MouseAdapter {
+
+        private int edge = 170;
+
         @Override
         public void mousePressed(MouseEvent e) {
             ParametersDialog dialog = new ParametersDialog(false);
             dialog.setLabelText("Пороговое значение:");
             if (partZone.isImageAdded()) {
-                dialog.setEdge(170);
+                dialog.setEdge(edge);
                 dialog.setOnOkListener(new OnOkMatrixButtonListener(dialog));
 
                 dialog.pack();
@@ -724,7 +806,9 @@ public class MainWindow extends MainFrame {
             public void actionPerformed(ActionEvent e) {
                 if (partZone.isImageAdded()) {
                     if (dialog.getEdge() != null) {
-                        resultZone.setImage(new MatrixEdgesFilter(dialog.getEdge()).apply(partZone.getImage()));
+                        MatrixEdgesFilter filter = new MatrixEdgesFilter(dialog.getEdge());
+                        edge = filter.getThreshold();
+                        resultZone.setImage(filter.apply(partZone.getImage()));
                     } else {
                         String messageText = "Введенное значение некорректно";
                         JOptionPane.showMessageDialog(null, messageText, "Ошибка",
@@ -813,12 +897,15 @@ public class MainWindow extends MainFrame {
     }
 
     class GammaCorrectionFilterButtonMouseListener extends MouseAdapter {
+
+        private double gamma = 1.5;
+
         @Override
         public void mousePressed(MouseEvent e) {
             ParametersDialog dialog = new ParametersDialog(true);
             dialog.setLabelText("Параметр гамма:");
             if (partZone.isImageAdded()) {
-                dialog.setDoubleParameter(1.5);
+                dialog.setDoubleParameter(gamma);
                 dialog.setOnOkListener(new OnOkGammaButtonListener(dialog));
 
                 dialog.pack();
@@ -850,7 +937,9 @@ public class MainWindow extends MainFrame {
             public void actionPerformed(ActionEvent e) {
                 if (partZone.isImageAdded()) {
                     if (dialog.getDoubleParameter() != null) {
-                        resultZone.setImage(new GammaCorrectionFilter(dialog.getDoubleParameter()).apply(partZone.getImage()));
+                        GammaCorrectionFilter filter = new GammaCorrectionFilter(dialog.getDoubleParameter());
+                        gamma = filter.getGamma();
+                        resultZone.setImage(filter.apply(partZone.getImage()));
                     } else {
                         String messageText = "Введенное значение некорректно";
                         JOptionPane.showMessageDialog(null, messageText, "Ошибка",
@@ -863,6 +952,8 @@ public class MainWindow extends MainFrame {
     }
 
     class RotationFilterButtonMouseListener extends MouseAdapter {
+
+        private int angle = 45;
         @Override
         public void mousePressed(MouseEvent e) {
             ParametersDialog dialog = new ParametersDialog(false);
@@ -870,7 +961,7 @@ public class MainWindow extends MainFrame {
             dialog.setMaximum(180);
             dialog.setMinimum(-180);
             if (partZone.isImageAdded()) {
-                dialog.setEdge(45);
+                dialog.setEdge(angle);
                 dialog.setOnOkListener(new OnOkRotationButtonListener(dialog));
 
                 dialog.pack();
@@ -902,7 +993,9 @@ public class MainWindow extends MainFrame {
             public void actionPerformed(ActionEvent e) {
                 if (partZone.isImageAdded()) {
                     if (dialog.getEdge() != null) {
-                        resultZone.setImage(new RotationFilter(dialog.getEdge()).apply(partZone.getImage()));
+                        RotationFilter filter = new RotationFilter(dialog.getEdge());
+                        angle = filter.getAngle();
+                        resultZone.setImage(filter.apply(partZone.getImage()));
                     } else {
                         String messageText = "Введенное значение некорректно";
                         JOptionPane.showMessageDialog(null, messageText, "Ошибка",
@@ -915,6 +1008,7 @@ public class MainWindow extends MainFrame {
     }
 
     class ScalingFilterButtonMouseListener extends MouseAdapter {
+
         @Override
         public void mousePressed(MouseEvent e) {
             if (partZone.isImageAdded()) {
@@ -930,33 +1024,6 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseExited(MouseEvent e) {
             statusBar.setText(defaultTooltip);
-        }
-    }
-
-
-    class OKDitheringButtonListener implements ActionListener {
-
-        DitheringFilter filter;
-        DitheringDialog dialog;
-
-        public OKDitheringButtonListener(DitheringFilter filter, DitheringDialog dialog) {
-            this.filter = filter;
-            this.dialog = dialog;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if (dialog.getNr() != null) {
-                filter.setRedN(dialog.getNr());
-            }
-            if (dialog.getNg() != null) {
-                filter.setGreenN(dialog.getNg());
-            }
-            if (dialog.getNb() != null) {
-                filter.setBlueN(dialog.getNb());
-            }
-            resultZone.setImage(filter.apply(partZone.getImage()));
-            dialog.dispose();
         }
     }
 

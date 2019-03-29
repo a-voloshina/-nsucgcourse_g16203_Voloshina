@@ -11,6 +11,10 @@ public class GammaCorrectionFilter extends Filter {
         this.gamma = gamma;
     }
 
+    public double getGamma() {
+        return gamma;
+    }
+
     private int correct(int color) {
         double func = Math.pow((double) color / 255, gamma);
         return saturate(func * 255);

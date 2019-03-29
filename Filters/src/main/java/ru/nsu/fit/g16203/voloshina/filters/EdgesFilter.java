@@ -11,6 +11,10 @@ public class EdgesFilter extends ConvolutionFilter {
         threshold = c;
     }
 
+    public int getThreshold() {
+        return threshold;
+    }
+
     protected int binarize(int color) {
         if (color > threshold) {
             color = 255;
