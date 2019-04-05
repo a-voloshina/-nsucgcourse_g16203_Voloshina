@@ -106,16 +106,6 @@ public class MainWindow extends MainFrame {
                 null, font, new AbsorbtionButtonMouseListener(), false);
         addMenuItem("Edit/Volume rendering/Volume rendering", "Visualizate volume rendering", KeyEvent.VK_R,
                 null, font, new VolumeRenderingButtonMouseListener(), false);
-//        addMenuItem("Edit/Canal/Delete R-chanel", "Set to zero the red component of the image", KeyEvent.VK_P,
-//                null, font, null, false);
-//        addMenuItem("Edit/Canal/Delete G-chanel", "Set to zero the green component of the image", KeyEvent.VK_P,
-//                null, font, null, false);
-//        addMenuItem("Edit/Canal/Delete B-chanel", "Set to zero the blue component of the image", KeyEvent.VK_P,
-//                null, font, null, false);
-//        addMenuItem("Edit/Canal/Brightness", "Increase the image brightness", KeyEvent.VK_P,
-//                null, font, null, false);
-//        addMenuItem("Edit/Canal/Contrast", "Increase the image contrast", KeyEvent.VK_P,
-//                null, font, null, false);
         addSubMenu("Edit/Dithering", font, KeyEvent.VK_E);
         addMenuItem("Edit/Dithering/Floyd-Steinberg", "Apply Floyd-Steinberg dithering algorithm", KeyEvent.VK_F,
                 null, font, new FloydSteinbergButtonMouseListener(), false);
