@@ -19,14 +19,10 @@ public class VolumeRenderingController {
     private int Ny;
     private int Nz;
 
-    private double small_threshold = 0.0000001;
-
     public VolumeRenderingController(File configFile, IAbsorbtionCreate ab, IEmissionCreate em) throws IOException {
         BufferedReader buf = new BufferedReader(new FileReader(configFile));
         absorbtionArray = configAbsorbtion(buf);
-        buf.readLine();
         emissionsArray = configEmission(buf);
-        buf.readLine();
         chargesArray = configCharges(buf);
         ab.absorbtionCreated(absorbtionArray);
         em.emissionCreated(emissionsArray);
@@ -34,11 +30,17 @@ public class VolumeRenderingController {
 
     private ArrayList<Pair<Integer, Double>> configAbsorbtion(BufferedReader buf) throws IOException {
         ArrayList<Pair<Integer, Double>> absorbtionArray = new ArrayList<>();
-        String line = buf.readLine();
+        String line;
+        while ((line = parseComments(buf.readLine())).equals("")) {
+            continue;
+        }
         int absorbtionTopNumber = Integer.parseInt(line);
         for (int i = 0; i < absorbtionTopNumber; ++i) {
             if ((line = buf.readLine()) == null) {
                 throw new IOException();
+            }
+            if (line.equals("")) {
+                continue;
             }
             String[] numbers = line.split(" ");
             if (numbers.length != 2) {
@@ -51,11 +53,17 @@ public class VolumeRenderingController {
 
     private ArrayList<Pair<Integer, Color>> configEmission(BufferedReader buf) throws IOException {
         ArrayList<Pair<Integer, Color>> emissionsArray = new ArrayList<>();
-        String line = buf.readLine();
+        String line;
+        while ((line = parseComments(buf.readLine())).equals("")) {
+            continue;
+        }
         int emissionTopNumber = Integer.parseInt(line);
         for (int i = 0; i < emissionTopNumber; ++i) {
-            if ((line = buf.readLine()) == null) {
+            if ((line = parseComments(buf.readLine())) == null) {
                 throw new IOException();
+            }
+            if (line.equals("")) {
+                continue;
             }
             String[] numbers = line.split(" ");
             if (numbers.length != 4) {
@@ -71,11 +79,17 @@ public class VolumeRenderingController {
 
     private ArrayList<Pair<Triple<Double>, Integer>> configCharges(BufferedReader buf) throws IOException {
         ArrayList<Pair<Triple<Double>, Integer>> chargesArray = new ArrayList<>();
-        String line = buf.readLine();
+        String line;
+        while ((line = parseComments(buf.readLine())).equals("")) {
+            continue;
+        }
         int chargesNumber = Integer.parseInt(line);
         for (int i = 0; i < chargesNumber; ++i) {
-            if ((line = buf.readLine()) == null) {
+            if ((line = parseComments(buf.readLine())) == null) {
                 throw new IOException();
+            }
+            if (line.equals("")) {
+                continue;
             }
             String[] numbers = line.split(" ");
             if (numbers.length != 4) {
@@ -85,6 +99,14 @@ public class VolumeRenderingController {
                     Double.parseDouble(numbers[2])), Integer.parseInt(numbers[3])));
         }
         return chargesArray;
+    }
+
+    private String parseComments(String line) {
+        int commentStartIndex = line.indexOf("//");
+        if (commentStartIndex > 0) {
+            line = line.substring(0, commentStartIndex);
+        }
+        return line;
     }
 
     public BufferedImage render(BufferedImage src, int Nx, int Ny, int Nz, boolean isAbsorbtionOn, boolean isEmissionOn) {
