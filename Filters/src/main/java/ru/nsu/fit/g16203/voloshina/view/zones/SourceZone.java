@@ -41,30 +41,30 @@ public class SourceZone extends JPanel {
     }
 
     private void setImage() throws IOException {
-            image = ImageIO.read(imageFile);
+        image = ImageIO.read(imageFile);
         if (image.getColorModel().getPixelSize() != 24) {
             throw new IOException();
         }
-            double kx = (double) image.getWidth() / panelWidth;
-            double ky = (double) image.getHeight() / panelHeight;
-            k = kx > ky ? kx : ky;
-            if (k > 1F) {
-                rectImage = new BufferedImage((int) Math.round(image.getWidth() / k),
-                        (int) Math.round(image.getHeight() / k), BufferedImage.TYPE_INT_ARGB);
-                AffineTransform at = new AffineTransform();
-                at.scale((double) 1 / k, (double) 1 / k);
-                AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
-                scaleOp.filter(image, rectImage);
-            } else {
-                rectImage = image;
-            }
-            xorRectWidth = (int) (panelWidth / k < rectImage.getWidth()-1 ? panelWidth / k : rectImage.getWidth() - 1);
-            xorRectHeight = (int) (panelHeight / k < rectImage.getHeight()-1 ? panelHeight / k : rectImage.getHeight() - 1);
-            repaint();
+        double kx = (double) image.getWidth() / panelWidth;
+        double ky = (double) image.getHeight() / panelHeight;
+        k = kx > ky ? kx : ky;
+        if (k > 1F) {
+            rectImage = new BufferedImage((int) Math.round(image.getWidth() / k),
+                    (int) Math.round(image.getHeight() / k), BufferedImage.TYPE_INT_ARGB);
+            AffineTransform at = new AffineTransform();
+            at.scale((double) 1 / k, (double) 1 / k);
+            AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
+            scaleOp.filter(image, rectImage);
+        } else {
+            rectImage = image;
+        }
+        xorRectWidth = (int) (panelWidth / k < rectImage.getWidth() - 1 ? panelWidth / k : rectImage.getWidth() - 1);
+        xorRectHeight = (int) (panelHeight / k < rectImage.getHeight() - 1 ? panelHeight / k : rectImage.getHeight() - 1);
+        repaint();
     }
 
     private BufferedImage getImagePart(int xorRectX, int xorRectY) {
-        return image.getSubimage((int)Math.round(xorRectX*k), (int)Math.round(xorRectY*k),
+        return image.getSubimage((int) Math.round(xorRectX * k), (int) Math.round(xorRectY * k),
                 panelWidth < image.getWidth() ? panelWidth : image.getWidth(),
                 panelHeight < image.getHeight() ? panelHeight : image.getHeight());
     }
@@ -83,13 +83,13 @@ public class SourceZone extends JPanel {
         setImage();
     }
 
-    public void selectImagePart(ISelect fn){
+    public void selectImagePart(ISelect fn) {
         mouseListener.fun = fn;
         addMouseMotionListener(mouseListener);
         repaint();
     }
 
-    public void stopSelectImagePart(){
+    public void stopSelectImagePart() {
         try {
             setImage();
         } catch (IOException e) {
@@ -103,11 +103,11 @@ public class SourceZone extends JPanel {
         repaint();
     }
 
-    public boolean isImageAdded(){
+    public boolean isImageAdded() {
         return (imageFile != null);
     }
 
-    private class SourceZoneMouseMotionListener implements MouseMotionListener{
+    private class SourceZoneMouseMotionListener implements MouseMotionListener {
 
         ISelect fun;
 

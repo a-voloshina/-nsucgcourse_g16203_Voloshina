@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
@@ -41,15 +42,19 @@ public class FileUtils {
         return dataDirectory;
     }
 
-    public static File getOpenFileName(JFrame parent, String[] extensions, String description) {
+    public static File getOpenFileName(JFrame parent, String[] extensions, String description) throws IOException {
         JFileChooser fileChooser = initFileChooser(extensions, description);
 
-        if (fileChooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
+        int result = fileChooser.showOpenDialog(parent);
+        if (result == JFileChooser.APPROVE_OPTION) {
             File file = getFile(extensions, fileChooser);
             dataDirectory = file.getParentFile();
             return file;
         }
-        return null;
+        if (result == JFileChooser.CANCEL_OPTION) {
+            return null;
+        }
+        throw new IOException("Can't open file");
     }
 
     public static File getSaveFileName(JFrame parent) {

@@ -1,4 +1,4 @@
-package ru.nsu.fit.g16203.voloshina.view;
+package ru.nsu.fit.g16203.voloshina.view.dialog;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -14,7 +14,7 @@ public class DitheringDialog extends JDialog {
     private JLabel NgLabel;
     private JLabel NbLabel;
 
-    private int max = 8;
+    private int max = 255;
 
     public DitheringDialog() {
         setContentPane(contentPane);
@@ -50,12 +50,10 @@ public class DitheringDialog extends JDialog {
     }
 
     private void onOK() {
-        // add your code here
         dispose();
     }
 
     private void onCancel() {
-        // add your code here if necessary
         dispose();
     }
 

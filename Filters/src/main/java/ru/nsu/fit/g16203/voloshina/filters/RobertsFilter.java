@@ -9,10 +9,6 @@ public class RobertsFilter extends EdgesFilter {
         super(threshold);
     }
 
-    public RobertsFilter() {
-        super(45);
-    }
-
     @Override
     protected Color getNewColor(BufferedImage src, int x, int y) {
         Color colorIJ = getColor(src, x, y);

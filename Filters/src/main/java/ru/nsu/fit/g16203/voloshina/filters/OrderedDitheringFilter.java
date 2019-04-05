@@ -8,9 +8,13 @@ public class OrderedDitheringFilter extends DitheringFilter {
 
     private int matrixSize;
     private ArrayList<ArrayList<Double>> ditherMatrix;
-    private int rRed = 256 / (1 << redN - 1);
-    private int rGreen = 256 / (1 << greenN - 1);
-    private int rBlue = 256 / (1 << blueN - 1);
+//    private int rRed = 256 / (1 << redN - 1);
+//    private int rGreen = 256 / (1 << greenN - 1);
+//    private int rBlue = 256 / (1 << blueN - 1);
+
+    private int rRed = 256 / redN;
+    private int rGreen = 256 / greenN;
+    private int rBlue = 256 / blueN;
 
     public OrderedDitheringFilter(int n) {
         matrixSize = n;
@@ -42,12 +46,18 @@ public class OrderedDitheringFilter extends DitheringFilter {
     @Override
     protected Color getNewColor(BufferedImage src, int x, int y) {
         Color oldColor = new Color(src.getRGB(x, y));
+//        int newRed = nearestPaletteColor((int) (oldColor.getRed() +
+//                rRed * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), redN);
+//        int newGreen = nearestPaletteColor((int) (oldColor.getGreen() +
+//                rGreen * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), greenN);
+//        int newBlue = nearestPaletteColor((int) (oldColor.getBlue() +
+//                rBlue * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), blueN);
         int newRed = nearestPaletteColor((int) (oldColor.getRed() +
-                rRed * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), redN);
+                rRed * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), rRed);
         int newGreen = nearestPaletteColor((int) (oldColor.getGreen() +
-                rGreen * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), greenN);
+                rGreen * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), rGreen);
         int newBlue = nearestPaletteColor((int) (oldColor.getBlue() +
-                rBlue * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), blueN);
+                rBlue * (ditherMatrix.get(y % matrixSize).get(x % matrixSize) - 0.5)), rBlue);
         return new Color(saturate(newRed), saturate(newGreen), saturate(newBlue));
     }
 }

@@ -47,6 +47,6 @@ public class Pair<K, V> {
         } catch (ClassCastException ex) {
             return false;
         }
-        return obj == this;
+        return ((Pair) obj).key == this.key && ((Pair) obj).getValue() == this.getKey();
     }
 }

@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
 
@@ -209,7 +210,7 @@ public class MainFrame extends JFrame {
         return FileUtils.getSaveFileName(this);
     }
 
-    public File getOpenFileName(String[] extensions, String description) {
+    public File getOpenFileName(String[] extensions, String description) throws IOException {
         return FileUtils.getOpenFileName(this, extensions, description);
     }
 

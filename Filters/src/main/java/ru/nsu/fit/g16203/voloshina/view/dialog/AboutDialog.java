@@ -1,4 +1,4 @@
-package ru.nsu.fit.g16203.voloshina.view;
+package ru.nsu.fit.g16203.voloshina.view.dialog;
 
 import javax.swing.*;
 

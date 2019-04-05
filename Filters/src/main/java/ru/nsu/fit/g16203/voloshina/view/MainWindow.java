@@ -1,15 +1,17 @@
 package ru.nsu.fit.g16203.voloshina.view;
 
+import ru.nsu.fit.g16203.voloshina.controller.VolumeRenderingController;
 import ru.nsu.fit.g16203.voloshina.filters.*;
-import ru.nsu.fit.g16203.voloshina.view.zones.PartZone;
-import ru.nsu.fit.g16203.voloshina.view.zones.ResultZone;
-import ru.nsu.fit.g16203.voloshina.view.zones.SourceZone;
+import ru.nsu.fit.g16203.voloshina.view.dialog.AboutDialog;
+import ru.nsu.fit.g16203.voloshina.view.dialog.DitheringDialog;
+import ru.nsu.fit.g16203.voloshina.view.dialog.ParametersDialog;
+import ru.nsu.fit.g16203.voloshina.view.dialog.RenderingDialog;
+import ru.nsu.fit.g16203.voloshina.view.zones.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -25,14 +27,18 @@ public class MainWindow extends MainFrame {
     private SourceZone sourceZone;
     private PartZone partZone;
     private ResultZone resultZone;
+    private JPanel renderingPanel = new JPanel();
+    private EmissionZone emissionZone = new EmissionZone();
+    private AbsorbtionZone absorbtionZone = new AbsorbtionZone();
     private JPanel statusPanel;
     private JLabel statusBar;
     private Component locationComponent;
 
     private boolean conditionChanges = false;
+    private VolumeRenderingController volumeRenderingController;
 
     public MainWindow() throws HeadlessException {
-        super(1105, 500, "FIT_16203_Voloshina_Filters");
+        super(1105, 700, "FIT_16203_Voloshina_Filters");
         //setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
         customizeMenu();
@@ -90,6 +96,15 @@ public class MainWindow extends MainFrame {
                 null, font, new NegativeButtonMouseListener(), false);
         addMenuItem("Edit/Canal/Gamma correction", "Lighten or darken the image using gamma correction", KeyEvent.VK_G,
                 null, font, new GammaCorrectionFilterButtonMouseListener(), false);
+        addSubMenu("Edit/Volume rendering", font, KeyEvent.VK_V);
+        addMenuItem("Edit/Volume rendering/Config", "Open volume rendering config file", KeyEvent.VK_C,
+                null, font, new ConfigButtonMouseListener(), false);
+        addMenuItem("Edit/Volume rendering/Emission", "Turn on/off emission for volume rendering", KeyEvent.VK_E,
+                null, font, new EmissionButtonMouseListener(), true);
+        addMenuItem("Edit/Volume rendering/Absorbtion", "Turn on/off absorbtion for volume rendering", KeyEvent.VK_A,
+                null, font, new AbsorbtionButtonMouseListener(), false);
+        addMenuItem("Edit/Volume rendering/Volume rendering", "Visualizate volume rendering", KeyEvent.VK_R,
+                null, font, new VolumeRenderingButtonMouseListener(), false);
 //        addMenuItem("Edit/Canal/Delete R-chanel", "Set to zero the red component of the image", KeyEvent.VK_P,
 //                null, font, null, false);
 //        addMenuItem("Edit/Canal/Delete G-chanel", "Set to zero the green component of the image", KeyEvent.VK_P,
@@ -145,14 +160,25 @@ public class MainWindow extends MainFrame {
         addToolBarSeparator();
         addToolBarButton("Edit/Rotate", "rotate.png");
         addToolBarButton("Edit/Zoom", "resize.png");
+        addToolBarSeparator();
+        addToolBarButton("Edit/Volume rendering/Config", "manual.png");
+        addToolBarButton("Edit/Volume rendering/Emission", "emission.png");
+        addToolBarButton("Edit/Volume rendering/Absorbtion", "absorbtion.png");
+        addToolBarButton("Edit/Volume rendering/Volume rendering", "volume.png");
+        addToolBarSeparator();
         addToolBarButton("Help/About");
 
         setSelectedMenuElement("View/Toolbar", true);
+        setSelectedMenuElement("View/Status Bar", true);
+
+        getToolBarButton("Edit/Volume rendering/Emission").setEnabled(false);
+        getToolBarButton("Edit/Volume rendering/Absorbtion").setEnabled(false);
+        getToolBarButton("Edit/Volume rendering/Volume rendering").setEnabled(false);
     }
 
     private void customizeStatusBar() {
         statusPanel = new JPanel();
-        add(statusPanel, BorderLayout.SOUTH);
+        add(statusPanel, BorderLayout.PAGE_END);
         statusPanel.setPreferredSize(new Dimension(getWidth(), 20));
         statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.X_AXIS));
         statusPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
@@ -171,6 +197,8 @@ public class MainWindow extends MainFrame {
         zonesPanel.add(sourceZone);
         zonesPanel.add(partZone);
         zonesPanel.add(resultZone);
+        zonesPanel.add(absorbtionZone);
+        zonesPanel.add(emissionZone);
         add(zonesPanel);
     }
 
@@ -180,6 +208,11 @@ public class MainWindow extends MainFrame {
             sourceZone.clear();
             partZone.clear();
             resultZone.clear();
+            absorbtionZone.clear();
+            emissionZone.clear();
+            getToolBarButton("Edit/Volume rendering/Emission").setEnabled(false);
+            getToolBarButton("Edit/Volume rendering/Absorbtion").setEnabled(false);
+            getToolBarButton("Edit/Volume rendering/Volume rendering").setEnabled(false);
         }
 
         @Override
@@ -199,19 +232,22 @@ public class MainWindow extends MainFrame {
 
         private void actionPerformed() {
             //File openFile = getOpenFileName(new String[]{"png", "bmp"}, "portable network graphics images");
-            File openFile = getOpenFileName(null, null);
-            if (openFile != null) {
-                try {
-                    sourceZone.addImage(openFile);
-                    partZone.clear();
-                    resultZone.clear();
-                } catch (IOException e) {
-                    String messageText = "Формат файла не поддерживается. Поодерживаемый формат изображения -  BMP/PNG, " +
-                            "24 бита/пиксель";
-                    JOptionPane.showMessageDialog(null, messageText, "Ошибка",
-                            JOptionPane.ERROR_MESSAGE);
+            File openFile = null;
+            try {
+                openFile = getOpenFileName(new String[]{"png", "bmp"}, "portable network graphics images");
+                if (openFile != null) {
+                    try {
+                        sourceZone.addImage(openFile);
+                        partZone.clear();
+                        resultZone.clear();
+                    } catch (IOException e) {
+                        String messageText = "Формат файла не поддерживается. Поодерживаемый формат изображения -  BMP/PNG, " +
+                                "24 бита/пиксель";
+                        JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
                 }
-            } else {
+            } catch (IOException e) {
                 String messageText = "Не удалось открыть файл";
                 JOptionPane.showMessageDialog(null, messageText, "Ошибка",
                         JOptionPane.ERROR_MESSAGE);
@@ -1024,6 +1060,157 @@ public class MainWindow extends MainFrame {
         @Override
         public void mouseExited(MouseEvent e) {
             statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class ConfigButtonMouseListener extends MouseAdapter {
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            try {
+                File openFile = getOpenFileName(null, null);
+                if (openFile != null) {
+                    try {
+                        volumeRenderingController = new VolumeRenderingController(openFile,
+                                absorbtionZone::drawAbsorbtionGraphic, emissionZone::drawEmissionGraphic);
+
+                        getToolBarButton("Edit/Volume rendering/Emission").setEnabled(true);
+                        getToolBarButton("Edit/Volume rendering/Emission").setSelected(true);
+                        getToolBarButton("Edit/Volume rendering/Absorbtion").setEnabled(true);
+                        getToolBarButton("Edit/Volume rendering/Absorbtion").setSelected(true);
+                        getToolBarButton("Edit/Volume rendering/Volume rendering").setEnabled(true);
+
+                    } catch (IOException ex) {
+                        String messageText = "Формат конфигурационного файла не поддерживается";
+                        JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            } catch (IOException ex) {
+                String messageText = "Не удалось открыть файл";
+                JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Volume rendering/Volume rendering").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class EmissionButtonMouseListener extends MouseAdapter {
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            JButton emissionToolbarButton = getToolBarButton("Edit/Volume rendering/Emission");
+            if (!emissionToolbarButton.isSelected()) {
+                emissionToolbarButton.setSelected(true);
+            } else {
+                emissionToolbarButton.setSelected(false);
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Volume rendering/Emission").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class AbsorbtionButtonMouseListener extends MouseAdapter {
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            JButton absorbtionToolbarButton = getToolBarButton("Edit/Volume rendering/Absorbtion");
+            if (!absorbtionToolbarButton.isSelected()) {
+                absorbtionToolbarButton.setSelected(true);
+            } else {
+                absorbtionToolbarButton.setSelected(false);
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Volume rendering/Absorbtion").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+    }
+
+    class VolumeRenderingButtonMouseListener extends MouseAdapter {
+
+        private int max = 350;
+        private int Nx = 350;
+        private int Ny = 350;
+        private int Nz = 350;
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (partZone.isImageAdded() && volumeRenderingController != null) {
+                RenderingDialog dialog = new RenderingDialog(max);
+                dialog.setNx(Nx);
+                dialog.setNy(Ny);
+                dialog.setNz(Nz);
+                dialog.setOnOkListener(new OKButtonListener(dialog));
+
+                dialog.pack();
+                dialog.setResizable(false);
+                dialog.setLocationRelativeTo(locationComponent);
+                dialog.setVisible(true);
+            }
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            statusBar.setText(getToolBarButton("Edit/Volume rendering/Volume rendering").getToolTipText());
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            statusBar.setText(defaultTooltip);
+        }
+
+        class OKButtonListener implements ActionListener {
+            RenderingDialog dialog;
+
+            OKButtonListener(RenderingDialog dialog) {
+                this.dialog = dialog;
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (dialog.getNx() != null || dialog.getNy() != null || dialog.getNz() != null) {
+                    if (dialog.getNx() != null) {
+                        Nx = dialog.getNx();
+                    }
+                    if (dialog.getNy() != null) {
+                        Ny = dialog.getNy();
+                    }
+                    if (dialog.getNz() != null) {
+                        Nz = dialog.getNz();
+                    }
+                    dialog.dispose();
+                    boolean isAbsorbtionOn = getToolBarButton("Edit/Volume rendering/Absorbtion").isSelected();
+                    System.out.println("isAbsorbtionOn = " + isAbsorbtionOn);
+                    boolean isEmissionOn = getToolBarButton("Edit/Volume rendering/Emission").isSelected();
+                    System.out.println("isEmissionOn = " + isEmissionOn);
+                    resultZone.setImage(volumeRenderingController.render(partZone.getImage(),
+                            Nx, Ny, Nz, isAbsorbtionOn, isEmissionOn));
+                }
+            }
         }
     }
 
