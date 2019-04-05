@@ -1,4 +1,4 @@
-package ru.nsu.fit.g16203.voloshina.view;
+package ru.nsu.fit.external;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -9,9 +9,15 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 
+/**
+ * @author Tagir F. Valeev
+ * @coauthor Anastasia A. Voloshina
+ */
+
 public class FileUtils {
 
     private static File dataDirectory = null;
+
 
     private static JFileChooser initFileChooser(String[] extensions, String description) {
         JFileChooser fileChooser = new JFileChooser();
@@ -30,6 +36,11 @@ public class FileUtils {
         return file;
     }
 
+    /**
+     * Returns File pointing to Data directory of current project. If Data directory is not found, returns current directory.
+     *
+     * @return File object.
+     */
     public static File getDataDirectory() {
         if (dataDirectory == null) {
             try {
@@ -42,6 +53,14 @@ public class FileUtils {
         return dataDirectory;
     }
 
+    /**
+     * Prompts user for file name to save and returns it
+     *
+     * @param parent      - parent frame for file selection dialog
+     * @param extensions  - preferred file extension (example: "txt")
+     * @param description - description of specified file type (example: "Text files")
+     * @return File specified by user or null if user canceled operation
+     */
     public static File getOpenFileName(JFrame parent, String[] extensions, String description) throws IOException {
         JFileChooser fileChooser = initFileChooser(extensions, description);
 
@@ -57,6 +76,11 @@ public class FileUtils {
         throw new IOException("Can't open file");
     }
 
+    /**
+     * Prompts user for file name to open and returns it
+     * @param parent - parent frame for file selection dialog
+     * @return File specified by user or null if user canceled operation
+     */
     public static File getSaveFileName(JFrame parent) {
         JFileChooser fileChooser = initFileChooser(null, null);
         fileChooser.setDialogTitle("Выберите директорию для сохранения");

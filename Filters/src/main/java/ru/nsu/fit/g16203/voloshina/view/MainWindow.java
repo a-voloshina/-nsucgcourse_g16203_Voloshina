@@ -1,5 +1,6 @@
 package ru.nsu.fit.g16203.voloshina.view;
 
+import ru.nsu.fit.external.MainFrame;
 import ru.nsu.fit.g16203.voloshina.controller.VolumeRenderingController;
 import ru.nsu.fit.g16203.voloshina.filters.*;
 import ru.nsu.fit.g16203.voloshina.view.dialog.AboutDialog;

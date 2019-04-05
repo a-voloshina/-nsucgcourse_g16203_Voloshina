@@ -1,4 +1,4 @@
-package ru.nsu.fit.g16203.voloshina.view;
+package ru.nsu.fit.external;
 
 import javax.swing.*;
 import java.awt.*;
@@ -7,6 +7,14 @@ import java.io.File;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
+
+/**
+ * MainFrame - main application frame
+ * Application should subclass it to create its own implementation
+ *
+ * @author Tagir F. Valeev
+ * @coauthor Anastasia A. Voloshina
+ */
 
 public class MainFrame extends JFrame {
 
