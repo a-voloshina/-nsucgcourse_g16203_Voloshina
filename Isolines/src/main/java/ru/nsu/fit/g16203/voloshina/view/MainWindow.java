@@ -5,11 +5,15 @@ import ru.nsu.fit.g16203.voloshina.controller.Controller;
 import ru.nsu.fit.g16203.voloshina.general.MenuElementMouseListener;
 import ru.nsu.fit.g16203.voloshina.general.StatusBar;
 import ru.nsu.fit.g16203.voloshina.general.Window;
+import ru.nsu.fit.g16203.voloshina.model.CircleFunction;
 import ru.nsu.fit.g16203.voloshina.model.HyberbolaFunction;
 import ru.nsu.fit.g16203.voloshina.model.LinearFunction;
+import ru.nsu.fit.g16203.voloshina.view.dialog.SettingsDialog;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
@@ -23,10 +27,13 @@ public class MainWindow extends Window {
     private int fieldWidth = 500;
     private int fieldHeight = 500;
 
-    public MainWindow() {
-        super(800, 650, "FIT_16203_Voloshina_Isolines");
+    private Controller controller;
+    private Controller legendController;
 
-        statusBar = new StatusBar(font, getWidth());
+    public MainWindow() {
+        super(630, 650, "FIT_16203_Voloshina_Isolines");
+
+        statusBar = new StatusBar(font, getWidth() / 2);
         customizeMenu();
         customizeToolbar();
         customizeUserArea();
@@ -58,6 +65,8 @@ public class MainWindow extends Window {
                 "circleshapegreen.png", font, new TriangleIntersectionButtonMouseListener(), true);
         addMenuItem("Edit/Interpolate", "Show interpolated color map of function", KeyEvent.VK_N,
                 "interpolation.png", font, new InterpolateButtonMouseListener(), true);
+        addMenuItem("Edit/Settings", "Show settings window", KeyEvent.VK_S,
+                "settings.png", font, new SettingsButtonMouseListener(), false);
     }
 
     @Override
@@ -70,6 +79,7 @@ public class MainWindow extends Window {
         addToolBarButton("Edit/Rectangle intersection");
         addToolBarButton("Edit/Triangle intersection");
         addToolBarButton("Edit/Interpolate");
+        addToolBarButton("Edit/Settings");
 
         getToolBarButton("Edit/Color map").setSelected(true);
     }
@@ -80,13 +90,13 @@ public class MainWindow extends Window {
     }
 
     private void customizeUserArea(){
-        userAreaPanel.setLayout(new FlowLayout(FlowLayout.LEADING, 30, 10));
-        Controller controller = new Controller(-10, 10, -10, 10, 10, 10,
+        userAreaPanel.setLayout(new FlowLayout(FlowLayout.LEADING, 20, 10));
+        controller = new Controller(-10, 10, -10, 10, 10, 10,
                 fieldWidth, fieldHeight, new HyberbolaFunction());
         functionViewPanel = new FunctionViewPanel(controller, controller.getFieldWidth(), controller.getFieldHeight());
         functionViewPanel.drawColorFuncMap();
-        Controller legendController = new Controller(0, 1, controller.getFunMin(), controller.getFunMax(),
-                2, controller.getK()*controller.getM(), 50, fieldHeight, new LinearFunction());
+        legendController = new Controller(0, 1, controller.getFunMin(), controller.getFunMax(),
+                2, controller.getLevelsCount(), 50, fieldHeight, new LinearFunction());
         legendPanel = new FunctionViewPanel(legendController, legendController.getFieldWidth(),
                 legendController.getFieldHeight());
         legendPanel.drawColorFuncMap();
@@ -98,6 +108,11 @@ public class MainWindow extends Window {
     class OpenButtonMouseListener extends MenuElementMouseListener {
         OpenButtonMouseListener() {
             super("File/Open", statusBar, (MainFrame) locationComponent);
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+
         }
     }
 
@@ -123,11 +138,6 @@ public class MainWindow extends Window {
         @Override
         public void mousePressed(MouseEvent e) {
             JButton gridToolbarButton = getToolBarButton(menuPath);
-//            if(isSelectedMenuElement(menuPath)){
-//                functionViewPanel.hideGrid();
-//            } else {
-//                functionViewPanel.drawGrid();
-//            }
             if(!gridToolbarButton.isSelected()){
                 gridToolbarButton.setSelected(true);
                 functionViewPanel.drawGrid();
@@ -151,9 +161,12 @@ public class MainWindow extends Window {
                 colorMapButton.setSelected(true);
                 interpolationToolbarButton.setSelected(false);
                 functionViewPanel.drawColorFuncMap();
+                legendPanel.drawColorFuncMap();
             } else {
                 colorMapButton.setSelected(false);
-                functionViewPanel.hideColorMap();
+                interpolationToolbarButton.setSelected(true);
+                legendPanel.drawInterpolateColorMap();
+                functionViewPanel.drawInterpolateColorMap();
             }
         }
     }
@@ -169,9 +182,11 @@ public class MainWindow extends Window {
             try {
                 if(!isolinesToolbarButton.isSelected()){
                     isolinesToolbarButton.setSelected(true);
+                    functionViewPanel.setIsolinesModeOn(true);
                     functionViewPanel.drawIsolines();
                 } else {
                     isolinesToolbarButton.setSelected(false);
+                    functionViewPanel.setIsolinesModeOn(false);
                     functionViewPanel.hideIsolines();
                 }
             } catch (Exception e1) {
@@ -192,7 +207,7 @@ public class MainWindow extends Window {
             try {
                 if(!intersectionToolbarButton.isSelected()){
                     intersectionToolbarButton.setSelected(true);
-                    isolinesToolbarButton.setSelected(true);
+                    //isolinesToolbarButton.setSelected(true);
                     functionViewPanel.setIntersectionTrianPointModeOn(true);
                     functionViewPanel.drawIsolines();
                 } else {
@@ -218,7 +233,7 @@ public class MainWindow extends Window {
             try {
                 if(!intersectionToolbarButton.isSelected()){
                     intersectionToolbarButton.setSelected(true);
-                    isolinesToolbarButton.setSelected(true);
+                    //isolinesToolbarButton.setSelected(true);
                     functionViewPanel.setIntersectionRectPointModeOn(true);
                     functionViewPanel.drawIsolines();
                 } else {
@@ -249,11 +264,117 @@ public class MainWindow extends Window {
                     legendPanel.drawInterpolateColorMap();
                 } else {
                     interpolationToolbarButton.setSelected(false);
+                    colorMapButton.setSelected(true);
+                    functionViewPanel.drawColorFuncMap();
                     legendPanel.drawColorFuncMap();
-                    functionViewPanel.hideColorMap();
                 }
             } catch (Exception e1) {
                 e1.printStackTrace();
+            }
+        }
+    }
+
+    class SettingsButtonMouseListener extends MenuElementMouseListener {
+
+        private int curK = 20;
+        private int curM = 20;
+        private double curA = -10;
+        private double curB = 10;
+        private double curC = -10;
+        private double curD = 10;
+
+        SettingsButtonMouseListener() {
+            super("Edit/Interpolate", statusBar, (MainFrame) locationComponent);
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            SettingsDialog settingsDialog = new SettingsDialog();
+            settingsDialog.setK(curK);
+            settingsDialog.setM(curM);
+            settingsDialog.setA(curA);
+            settingsDialog.setB(curB);
+            settingsDialog.setC(curC);
+            settingsDialog.setD(curD);
+            settingsDialog.setOnOkListener(new OnOkListener(settingsDialog));
+
+            settingsDialog.pack();
+            settingsDialog.setResizable(false);
+            settingsDialog.setLocationRelativeTo(locationComponent);
+            settingsDialog.setVisible(true);
+        }
+
+        class OnOkListener implements ActionListener {
+
+            private SettingsDialog dialog;
+
+            public OnOkListener(SettingsDialog dialog) {
+                this.dialog = dialog;
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Integer k = dialog.getK();
+                Integer m = dialog.getM();
+                Double a = dialog.getA();
+                Double b = dialog.getB();
+                Double c = dialog.getC();
+                Double d = dialog.getD();
+                if (k != null && m != null && a != null && b != null && c != null && d != null) {
+//                    System.out.println("k = " + k);
+//                    System.out.println("m = " + m);
+//                    System.out.println("a = " + a);
+//                    System.out.println("b = " + b);
+//                    System.out.println("c = " + c);
+//                    System.out.println("d = " + d);
+//                    System.out.println("fmin = " + controller.getFunMin());
+//                    System.out.println("fmax = " + controller.getFunMax());
+//                    System.out.println();
+
+                    curK = k;
+                    curM = m;
+                    curA = a;
+                    curB = b;
+                    curC = c;
+                    curD = d;
+                    controller.setGridParams(k, m);
+                    controller.setDomain(a, b, c, d);
+                    legendController.setDomain(legendController.getA(), legendController.getB(), controller.getFunMin(),
+                            controller.getFunMax());
+                    if (getToolBarButton("Edit/Grid").isSelected()) {
+                        functionViewPanel.drawGrid();
+                    }
+                    if (getToolBarButton("Edit/Color map").isSelected()) {
+                        functionViewPanel.drawColorFuncMap();
+                    }
+                    if (getToolBarButton("Edit/Isolines").isSelected()) {
+                        try {
+                            functionViewPanel.drawIsolines();
+                        } catch (Exception e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+                    if (getToolBarButton("Edit/Triangle intersection").isSelected()) {
+                        functionViewPanel.setIntersectionTrianPointModeOn(true);
+                        try {
+                            functionViewPanel.drawIsolines();
+                        } catch (Exception e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+                    if (getToolBarButton("Edit/Rectangle intersection").isSelected()) {
+                        functionViewPanel.setIntersectionRectPointModeOn(true);
+                        try {
+                            functionViewPanel.drawIsolines();
+                        } catch (Exception e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+                    if (getToolBarButton("Edit/Interpolate").isSelected()) {
+                        functionViewPanel.drawInterpolateColorMap();
+                    }
+
+                }
             }
         }
     }

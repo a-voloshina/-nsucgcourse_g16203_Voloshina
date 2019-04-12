@@ -25,8 +25,10 @@ public class Controller {
     private ArrayList<Double> levelsList;
     private int k;
     private int m;
-    private int gridXSize;
-    private int gridYSize;
+    //    private int gridXSize;
+//    private int gridYSize;
+    private double gridXSize;
+    private double gridYSize;
     private int fieldWidth;
     private int fieldHeight;
 
@@ -36,6 +38,7 @@ public class Controller {
 
     private boolean isIntersectionRectPointModeOn = false;
     private boolean isIntersectionTrianPointModeOn = false;
+    private boolean isIsolinesModeOn = false;
 
     public Controller(double a, double b, double c, double d, int k, int m, int width, int height, Function function) {
         this.a = a;
@@ -46,8 +49,10 @@ public class Controller {
         this.m = m;
         this.fieldWidth = width;
         this.fieldHeight = height;
-        gridXSize = fieldWidth / k;
-        gridYSize = fieldHeight / m;
+//        gridXSize = fieldWidth / k;
+//        gridYSize = fieldHeight / m;
+        gridXSize = (b - a) / k;
+        gridYSize = (d - c) / m;
         this.function = function;
 
         countFunctionMinMax();
@@ -59,7 +64,8 @@ public class Controller {
         double max = min;
         for (int i = 0; i <= k; ++i) {
             for (int j = 0; j <= m; ++j) {
-                double curValue = function.getFunctionValue(getXFromU(i * gridXSize), getYFromV(j * gridYSize));
+//                double curValue = function.getFunctionValue(getXFromU(i * gridXSize), getYFromV(j * gridYSize));
+                double curValue = function.getFunctionValue(i * gridXSize + a, j * gridYSize + c);
                 if (curValue > max) {
                     max = curValue;
                 }
@@ -108,12 +114,18 @@ public class Controller {
     private double getInterpolateFuncValue(int u, int v) {
         double x = getXFromU(u);
         double y = getYFromV(v);
-        int gridCellXNumber = u / gridXSize;
-        int gridCellYNumber = v / gridYSize;
-        double x13 = getXFromU(gridXSize * gridCellXNumber);
-        double x24 = getXFromU(gridXSize * (gridCellXNumber + 1));
-        double y12 = getYFromV(gridYSize * gridCellYNumber);
-        double y34 = getYFromV(gridYSize * (gridCellYNumber + 1));
+//        int gridCellXNumber = u / gridXSize;
+//        int gridCellYNumber = v / gridYSize;
+        int gridCellXNumber = (int) ((x - a) / gridXSize);
+        int gridCellYNumber = (int) ((y - c) / gridYSize);
+//        double x13 = getXFromU(gridXSize * gridCellXNumber);
+//        double x24 = getXFromU(gridXSize * (gridCellXNumber + 1));
+//        double y12 = getYFromV(gridYSize * gridCellYNumber);
+//        double y34 = getYFromV(gridYSize * (gridCellYNumber + 1));
+        double x13 = gridXSize * gridCellXNumber + a;
+        double x24 = gridXSize * (gridCellXNumber + 1) + a;
+        double y12 = gridYSize * gridCellYNumber + c;
+        double y34 = gridYSize * (gridCellYNumber + 1) + c;
         double f1 = function.getFunctionValue(x13, y12);
         double f2 = function.getFunctionValue(x24, y12);
         double f3 = function.getFunctionValue(x13, y34);
@@ -125,7 +137,7 @@ public class Controller {
                                           double f3, double f4,
                                           double x13, double x24,
                                           double y12, double y34,
-                                          double x, double y){
+                                          double x, double y) {
         double alphaX = (x - x13) / (x24 - x13);
         double f34 = alphaX * f4 + (1 - alphaX) * f3;
         double f12 = alphaX * f2 + (1 - alphaX) * f1;
@@ -176,16 +188,22 @@ public class Controller {
             double z = levelsList.get(l);
             for (int i = 0; i < m; ++i) {
                 for (int j = 0; j < k; ++j) {
-                    double x13 = getXFromU(gridXSize * j);
-                    double x24 = getXFromU(gridXSize * (j + 1));
-                    double y12 = getYFromV(gridYSize * i);
-                    double y34 = getYFromV(gridYSize * (i + 1));
+//                    double x13 = getXFromU(gridXSize * j);
+//                    double x24 = getXFromU(gridXSize * (j + 1));
+//                    double y12 = getYFromV(gridYSize * i);
+//                    double y34 = getYFromV(gridYSize * (i + 1));
+                    double x13 = gridXSize * j + a;
+                    double x24 = gridXSize * (j + 1) + a;
+                    double y12 = gridYSize * i + c;
+                    double y34 = gridYSize * (i + 1) + c;
                     double f1 = function.getFunctionValue(x13, y12);
                     double f2 = function.getFunctionValue(x24, y12);
                     double f3 = function.getFunctionValue(x13, y34);
                     double f4 = function.getFunctionValue(x24, y34);
-                    double xCenter = getXFromU(gridXSize * j + gridXSize / 2);
-                    double yCenter = getYFromV(gridYSize * i + gridYSize / 2);
+//                    double xCenter = getXFromU(gridXSize * j + gridXSize / 2);
+//                    double yCenter = getYFromV(gridYSize * i + gridYSize / 2);
+                    double xCenter = gridXSize * j + gridXSize / 2 + a;
+                    double yCenter = gridYSize * i + gridYSize / 2 + c;
                     double fCenter = (f1 + f2 + f3 + f4) / 4;
 
                     int intersectionCount = 0;
@@ -200,81 +218,83 @@ public class Controller {
                     Pair<Double, Double> bottomLeft = getIntersectionCoords(f3, fCenter, z, x13, xCenter, y34, yCenter);
                     Pair<Double, Double> bottomRight = getIntersectionCoords(fCenter, f4, z, xCenter, x24, yCenter, y34);
 
-                    if (top != null) {
-                        ++intersectionCount;
-                    }
-                    if (bottom != null) {
-                        ++intersectionCount;
-                    }
-                    if (left != null) {
-                        ++intersectionCount;
-                    }
-                    if (right != null) {
-                        ++intersectionCount;
-                    }
+                    if (isIsolinesModeOn) {
+                        if (top != null) {
+                            ++intersectionCount;
+                        }
+                        if (bottom != null) {
+                            ++intersectionCount;
+                        }
+                        if (left != null) {
+                            ++intersectionCount;
+                        }
+                        if (right != null) {
+                            ++intersectionCount;
+                        }
 
-                    if (intersectionCount == 0) {
-                        continue;
-                    }
-                    if (intersectionCount == 2 || intersectionCount == 4) {
-                        if (topLeft != null) {
-                            if (top != null) {
-                                painter.drawLine(getUFromX(topLeft.getKey()), getVFromY(topLeft.getValue()),
-                                        getUFromX(top.getKey()), getVFromY(top.getValue()));
-                            }
-                            if (left != null) {
-                                painter.drawLine(getUFromX(topLeft.getKey()), getVFromY(topLeft.getValue()),
-                                        getUFromX(left.getKey()), getVFromY(left.getValue()));
-                            }
-                            if (bottomLeft != null) {
-                                painter.drawLine(getUFromX(topLeft.getKey()), getVFromY(topLeft.getValue()),
-                                        getUFromX(bottomLeft.getKey()), getVFromY(bottomLeft.getValue()));
+                        if (intersectionCount == 0) {
+                            continue;
+                        }
+                        if (intersectionCount == 2 || intersectionCount == 4) {
+                            if (topLeft != null) {
+                                if (top != null) {
+                                    painter.drawLine(getUFromX(topLeft.getKey()), getVFromY(topLeft.getValue()),
+                                            getUFromX(top.getKey()), getVFromY(top.getValue()));
+                                }
+                                if (left != null) {
+                                    painter.drawLine(getUFromX(topLeft.getKey()), getVFromY(topLeft.getValue()),
+                                            getUFromX(left.getKey()), getVFromY(left.getValue()));
+                                }
+                                if (bottomLeft != null) {
+                                    painter.drawLine(getUFromX(topLeft.getKey()), getVFromY(topLeft.getValue()),
+                                            getUFromX(bottomLeft.getKey()), getVFromY(bottomLeft.getValue()));
+                                }
+                                if (topRight != null) {
+                                    painter.drawLine(getUFromX(topLeft.getKey()), getVFromY(topLeft.getValue()),
+                                            getUFromX(topRight.getKey()), getVFromY(topRight.getValue()));
+                                }
                             }
                             if (topRight != null) {
-                                painter.drawLine(getUFromX(topLeft.getKey()), getVFromY(topLeft.getValue()),
-                                        getUFromX(topRight.getKey()), getVFromY(topRight.getValue()));
+                                if (top != null) {
+                                    painter.drawLine(getUFromX(topRight.getKey()), getVFromY(topRight.getValue()),
+                                            getUFromX(top.getKey()), getVFromY(top.getValue()));
+                                }
+                                if (right != null) {
+                                    painter.drawLine(getUFromX(topRight.getKey()), getVFromY(topRight.getValue()),
+                                            getUFromX(right.getKey()), getVFromY(right.getValue()));
+                                }
+                                if (bottomRight != null) {
+                                    painter.drawLine(getUFromX(topRight.getKey()), getVFromY(topRight.getValue()),
+                                            getUFromX(bottomRight.getKey()), getVFromY(bottomRight.getValue()));
+                                }
                             }
-                        }
-                        if (topRight != null) {
-                            if (top != null) {
-                                painter.drawLine(getUFromX(topRight.getKey()), getVFromY(topRight.getValue()),
-                                        getUFromX(top.getKey()), getVFromY(top.getValue()));
-                            }
-                            if (right != null) {
-                                painter.drawLine(getUFromX(topRight.getKey()), getVFromY(topRight.getValue()),
-                                        getUFromX(right.getKey()), getVFromY(right.getValue()));
+                            if (bottomLeft != null) {
+                                if (left != null) {
+                                    painter.drawLine(getUFromX(bottomLeft.getKey()), getVFromY(bottomLeft.getValue()),
+                                            getUFromX(left.getKey()), getVFromY(left.getValue()));
+                                }
+                                if (bottom != null) {
+                                    painter.drawLine(getUFromX(bottomLeft.getKey()), getVFromY(bottomLeft.getValue()),
+                                            getUFromX(bottom.getKey()), getVFromY(bottom.getValue()));
+                                }
+                                if (bottomRight != null) {
+                                    painter.drawLine(getUFromX(bottomLeft.getKey()), getVFromY(bottomLeft.getValue()),
+                                            getUFromX(bottomRight.getKey()), getVFromY(bottomRight.getValue()));
+                                }
                             }
                             if (bottomRight != null) {
-                                painter.drawLine(getUFromX(topRight.getKey()), getVFromY(topRight.getValue()),
-                                        getUFromX(bottomRight.getKey()), getVFromY(bottomRight.getValue()));
+                                if (right != null) {
+                                    painter.drawLine(getUFromX(bottomRight.getKey()), getVFromY(bottomRight.getValue()),
+                                            getUFromX(right.getKey()), getVFromY(right.getValue()));
+                                }
+                                if (bottom != null) {
+                                    painter.drawLine(getUFromX(bottomRight.getKey()), getVFromY(bottomRight.getValue()),
+                                            getUFromX(bottom.getKey()), getVFromY(bottom.getValue()));
+                                }
                             }
+                        } else {
+                            throw new Exception();
                         }
-                        if (bottomLeft != null) {
-                            if (left != null) {
-                                painter.drawLine(getUFromX(bottomLeft.getKey()), getVFromY(bottomLeft.getValue()),
-                                        getUFromX(left.getKey()), getVFromY(left.getValue()));
-                            }
-                            if (bottom != null) {
-                                painter.drawLine(getUFromX(bottomLeft.getKey()), getVFromY(bottomLeft.getValue()),
-                                        getUFromX(bottom.getKey()), getVFromY(bottom.getValue()));
-                            }
-                            if (bottomRight != null) {
-                                painter.drawLine(getUFromX(bottomLeft.getKey()), getVFromY(bottomLeft.getValue()),
-                                        getUFromX(bottomRight.getKey()), getVFromY(bottomRight.getValue()));
-                            }
-                        }
-                        if (bottomRight != null) {
-                            if (right != null) {
-                                painter.drawLine(getUFromX(bottomRight.getKey()), getVFromY(bottomRight.getValue()),
-                                        getUFromX(right.getKey()), getVFromY(right.getValue()));
-                            }
-                            if (bottom != null) {
-                                painter.drawLine(getUFromX(bottomRight.getKey()), getVFromY(bottomRight.getValue()),
-                                        getUFromX(bottom.getKey()), getVFromY(bottom.getValue()));
-                            }
-                        }
-                    } else {
-                        throw new Exception();
                     }
 
                     if (isIntersectionRectPointModeOn) {
@@ -314,12 +334,20 @@ public class Controller {
     public Color getInterpolatedPixelColor(int u, int v) {
         double x = getXFromU(u);
         double y = getYFromV(v);
-        int gridCellXNumber = u / gridXSize;
-        int gridCellYNumber = v / gridYSize;
-        double x13 = getXFromU(gridXSize * gridCellXNumber);
-        double x24 = getXFromU(gridXSize * (gridCellXNumber + 1));
-        double y12 = getYFromV(gridYSize * gridCellYNumber);
-        double y34 = getYFromV(gridYSize * (gridCellYNumber + 1));
+//        int gridCellXNumber = u / gridXSize;
+//        int gridCellYNumber = v / gridYSize;
+//        double x13 = getXFromU(gridXSize * gridCellXNumber);
+//        double x24 = getXFromU(gridXSize * (gridCellXNumber + 1));
+//        double y12 = getYFromV(gridYSize * gridCellYNumber);
+//        double y34 = getYFromV(gridYSize * (gridCellYNumber + 1));
+
+        int gridCellXNumber = (int) ((x - a) / gridXSize);
+        int gridCellYNumber = (int) ((y - c) / gridYSize);
+        double x13 = gridXSize * gridCellXNumber + a;
+        double x24 = gridXSize * (gridCellXNumber + 1) + a;
+        double y12 = gridYSize * gridCellYNumber + c;
+        double y34 = gridYSize * (gridCellYNumber + 1) + c;
+
         double f1 = function.getFunctionValue(x13, y12);
         double f2 = function.getFunctionValue(x24, y12);
         double f3 = function.getFunctionValue(x13, y34);
@@ -337,12 +365,23 @@ public class Controller {
         return new Color(newRed, newGreen, newBlue);
     }
 
+    public void drawGrid(FunctionViewPanel.LinePainter painter) {
+        for (int i = 1; i < m; ++i) {
+            double curY = gridYSize * i + c;
+            painter.drawLine(0, getVFromY(curY), fieldWidth - 1, getVFromY(curY));
+        }
+        for (int j = 1; j < k; ++j) {
+            double curX = gridXSize * j + a;
+            painter.drawLine(getUFromX(curX), 0, getUFromX(curX), fieldHeight - 1);
+        }
+    }
+
     public int getGridXSize() {
-        return gridXSize;
+        return fieldWidth / k;
     }
 
     public int getGridYSize() {
-        return gridYSize;
+        return fieldHeight / m;
     }
 
     public int getFieldWidth() {
@@ -369,6 +408,30 @@ public class Controller {
         return m;
     }
 
+    public int getColorsCount() {
+        return n + 1;
+    }
+
+    public int getLevelsCount() {
+        return n;
+    }
+
+    public double getA() {
+        return a;
+    }
+
+    public double getB() {
+        return b;
+    }
+
+    public double getC() {
+        return c;
+    }
+
+    public double getD() {
+        return d;
+    }
+
     public void setDomain(double a, double b, double c, double d) {
         this.a = a;
         this.b = b;
@@ -381,6 +444,10 @@ public class Controller {
     public void setGridParams(int k, int m) {
         this.k = k;
         this.m = m;
+//        gridXSize = fieldWidth / k;
+//        gridYSize = fieldHeight / m;
+        gridXSize = (b - a) / k;
+        gridYSize = (d - c) / m;
         countFunctionMinMax();
         initializeLevelsList();
     }
@@ -399,5 +466,9 @@ public class Controller {
 
     public void setIntersectionTrianPointModeOn(boolean intersectionTrianPointModeOn) {
         isIntersectionTrianPointModeOn = intersectionTrianPointModeOn;
+    }
+
+    public void setIsolinesModeOn(boolean isolinesModeOn) {
+        isIsolinesModeOn = isolinesModeOn;
     }
 }

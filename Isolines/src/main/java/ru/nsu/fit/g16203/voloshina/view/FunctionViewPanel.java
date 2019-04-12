@@ -10,9 +10,11 @@ public class FunctionViewPanel extends JPanel {
     private BufferedImage functionMapImage;
     private BufferedImage gridImage;
     private BufferedImage isolinesImage;
+    private BufferedImage pointsImage;
     private Controller controller;
 
     private Color borderColor = Color.black;
+    private Color isolinesColor = Color.white;
 
     public interface LinePainter {
         void drawLine(int x0, int y0, int x1, int y1);
@@ -20,10 +22,6 @@ public class FunctionViewPanel extends JPanel {
 
     public interface PointPainter {
         void drawPoint(int x, int y, Color fillColor);
-    }
-
-    public interface ColorPainter {
-        void setColor(int x, int y, int rgb);
     }
 
     public FunctionViewPanel(Controller controller, int width, int height) {
@@ -34,6 +32,7 @@ public class FunctionViewPanel extends JPanel {
         functionMapImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         gridImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         isolinesImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        pointsImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     }
 
     @Override
@@ -42,6 +41,7 @@ public class FunctionViewPanel extends JPanel {
         g.drawImage(functionMapImage, 0, 0, functionMapImage.getWidth(), functionMapImage.getHeight(), null);
         g.drawImage(gridImage, 0, 0, gridImage.getWidth(), gridImage.getHeight(), null);
         g.drawImage(isolinesImage, 0, 0, isolinesImage.getWidth(), isolinesImage.getHeight(), null);
+        g.drawImage(pointsImage, 0, 0, pointsImage.getWidth(), pointsImage.getHeight(), null);
     }
 
     private void drawBresenhamLine(int x0, int y0, int x1, int y1, Color color, BufferedImage image) {
@@ -96,12 +96,16 @@ public class FunctionViewPanel extends JPanel {
         drawBresenhamLine(x0, y0, x1, y1, color, image);
     }
 
-    private void drawLine(int x0, int y0, int x1, int y1){
-        drawLine(x0, y0, x1, y1, borderColor, isolinesImage);
+    private void drawIsoine(int x0, int y0, int x1, int y1) {
+        drawLine(x0, y0, x1, y1, isolinesColor, isolinesImage);
+    }
+
+    private void drawGridLine(int x0, int y0, int x1, int y1) {
+        drawLine(x0, y0, x1, y1, borderColor, gridImage);
     }
 
     private void drawPoint(int x, int y, Color color){
-        Graphics2D g2d  = isolinesImage.createGraphics();
+        Graphics2D g2d = pointsImage.createGraphics();
         int radius = 7;
         g2d.setPaint(color);
         g2d.fillOval(x - radius/2, y - radius/2, radius, radius);
@@ -112,38 +116,38 @@ public class FunctionViewPanel extends JPanel {
     }
 
     public void drawColorFuncMap(){
+        functionMapImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
         for (int i = 0; i < getHeight(); ++i){
             for(int j = 0; j < getWidth(); ++j){
                 functionMapImage.setRGB(j, i, controller.getPixelColor(j, i).getRGB());
             }
         }
+        System.out.println("draw color map");
         repaint();
     }
 
     public void drawGrid(){
-        for(int u = 1; u < controller.getM(); ++u){
-            int curY = u*controller.getGridYSize();
-            drawLine(0, curY, controller.getFieldWidth()-1, curY, borderColor, gridImage);
-        }
-        for(int v = 1; v < controller.getK(); ++v){
-            int curX = v*controller.getGridXSize();
-            drawLine(curX, 0, curX, controller.getFieldHeight()-1, borderColor, gridImage);
-        }
+        gridImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
+        controller.drawGrid(this::drawGridLine);
         repaint();
     }
 
     public void drawInterpolateColorMap(){
+        functionMapImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
         for (int i = 0; i < getHeight(); ++i){
             for(int j = 0; j < getWidth(); ++j){
                 functionMapImage.setRGB(j, i, controller.getInterpolatedPixelColor(j, i).getRGB());
             }
         }
+        System.out.println("draw interpolated color map");
         repaint();
     }
 
     public void drawIsolines() throws Exception {
         isolinesImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
-        controller.drawIsolines(this::drawLine, this::drawPoint);
+        pointsImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
+        controller.drawIsolines(this::drawIsoine, this::drawPoint);
+        System.out.println("draw isolines");
         repaint();
     }
 
@@ -168,6 +172,10 @@ public class FunctionViewPanel extends JPanel {
 
     public void setIntersectionTrianPointModeOn(boolean intersectionTrianPointModeOn) {
         controller.setIntersectionTrianPointModeOn(intersectionTrianPointModeOn);
+    }
+
+    public void setIsolinesModeOn(boolean isolinesModeOn) {
+        controller.setIsolinesModeOn(isolinesModeOn);
     }
 
 }
