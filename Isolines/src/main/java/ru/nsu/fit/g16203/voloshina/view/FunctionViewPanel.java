@@ -7,7 +7,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 
@@ -49,6 +48,8 @@ public class FunctionViewPanel extends JPanel {
                 if (x < getWidth() && y < getHeight() && x >= 0 && y >= 0) {
                     try {
                         controller.drawUserIsoline(x, y, functionViewPanel::drawIsoine, functionViewPanel::drawPoint);
+                        lastCursorPosition.setKey(x);
+                        lastCursorPosition.setValue(y);
                         repaint();
                     } catch (Exception e1) {
                         e1.printStackTrace();
@@ -242,4 +243,7 @@ public class FunctionViewPanel extends JPanel {
         controller.setIsolinesModeOn(isolinesModeOn);
     }
 
+    public void setIsolinesColor(Color isolinesColor) {
+        this.isolinesColor = isolinesColor;
+    }
 }

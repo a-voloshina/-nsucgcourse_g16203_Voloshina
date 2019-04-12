@@ -26,8 +26,6 @@ public class Controller {
     private ArrayList<Double> usersLevelsList;
     private int k;
     private int m;
-    //    private int gridXSize;
-//    private int gridYSize;
     private double gridXSize;
     private double gridYSize;
     private int fieldWidth;
@@ -406,6 +404,11 @@ public class Controller {
         return n;
     }
 
+    public void setLevelsCount(int n) {
+        this.n = n;
+        initializeLevelsList();
+    }
+
     public double getA() {
         return a;
     }
@@ -454,6 +457,11 @@ public class Controller {
 
     public double getFunMax() {
         return funMax;
+    }
+
+    public void setColorsList(ArrayList<Color> colorsList) {
+        this.colorsList = colorsList;
+        initializeLevelsList();
     }
 
     public void setIntersectionRectPointModeOn(boolean intersectionRectPointModeOn) {

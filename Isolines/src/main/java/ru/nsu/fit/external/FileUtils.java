@@ -1,5 +1,7 @@
 package ru.nsu.fit.external;
 
+import ru.nsu.fit.g16203.voloshina.OpenFileExeption;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -44,7 +46,7 @@ public class FileUtils {
     public static File getDataDirectory() {
         if (dataDirectory == null) {
             try {
-                dataDirectory = new File(System.getProperty("user.dir")+"/FIT_16203_Voloshina_Filters_Data");
+                dataDirectory = new File(System.getProperty("user.dir") + "/FIT_16203_Voloshina_Isolines_Data");
 
             } catch (NullPointerException e) {
                 dataDirectory = new File(System.getProperty("user.dir"));
@@ -61,7 +63,7 @@ public class FileUtils {
      * @param description - description of specified file type (example: "Text files")
      * @return File specified by user or null if user canceled operation
      */
-    public static File getOpenFileName(JFrame parent, String[] extensions, String description) throws IOException {
+    public static File getOpenFileName(JFrame parent, String[] extensions, String description) throws OpenFileExeption {
         JFileChooser fileChooser = initFileChooser(extensions, description);
 
         int result = fileChooser.showOpenDialog(parent);
@@ -73,7 +75,7 @@ public class FileUtils {
         if (result == JFileChooser.CANCEL_OPTION) {
             return null;
         }
-        throw new IOException("Can't open file");
+        throw new OpenFileExeption("Can't open file");
     }
 
     /**

@@ -1,12 +1,13 @@
 package ru.nsu.fit.g16203.voloshina.view;
 
 import ru.nsu.fit.external.MainFrame;
+import ru.nsu.fit.g16203.voloshina.OpenFileExeption;
 import ru.nsu.fit.g16203.voloshina.controller.Controller;
+import ru.nsu.fit.g16203.voloshina.controller.FileController;
 import ru.nsu.fit.g16203.voloshina.general.MenuElementMouseListener;
 import ru.nsu.fit.g16203.voloshina.general.StatusBar;
 import ru.nsu.fit.g16203.voloshina.general.Window;
 import ru.nsu.fit.g16203.voloshina.model.CircleFunction;
-import ru.nsu.fit.g16203.voloshina.model.HyberbolaFunction;
 import ru.nsu.fit.g16203.voloshina.model.LinearFunction;
 import ru.nsu.fit.g16203.voloshina.view.dialog.SettingsDialog;
 
@@ -16,8 +17,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 
 public class MainWindow extends Window {
 
@@ -111,6 +115,43 @@ public class MainWindow extends Window {
         add(userAreaPanel);
     }
 
+    private void updateCondition() {
+        if (getToolBarButton("Edit/Grid").isSelected()) {
+            functionViewPanel.drawGrid();
+        }
+        if (getToolBarButton("Edit/Color map").isSelected()) {
+            functionViewPanel.drawColorFuncMap();
+            legendPanel.drawColorFuncMap();
+        }
+        if (getToolBarButton("Edit/Isolines").isSelected()) {
+            try {
+                functionViewPanel.drawIsolines();
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
+        }
+        if (getToolBarButton("Edit/Triangle intersection").isSelected()) {
+            functionViewPanel.setIntersectionTrianPointModeOn(true);
+            try {
+                functionViewPanel.drawIsolines();
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
+        }
+        if (getToolBarButton("Edit/Rectangle intersection").isSelected()) {
+            functionViewPanel.setIntersectionRectPointModeOn(true);
+            try {
+                functionViewPanel.drawIsolines();
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
+        }
+        if (getToolBarButton("Edit/Interpolate").isSelected()) {
+            functionViewPanel.drawInterpolateColorMap();
+            legendPanel.drawInterpolateColorMap();
+        }
+    }
+
     class FunctionViewPanelMouseMovingListener implements FunctionViewPanel.MouseMovingListener {
 
         @Override
@@ -128,7 +169,31 @@ public class MainWindow extends Window {
 
         @Override
         public void mousePressed(MouseEvent e) {
-
+            try {
+                File configFile = getOpenFileName(new String[]{"txt"}, "Text config format");
+                if (configFile != null) {
+                    FileController fileController = new FileController();
+                    fileController.parseFile(configFile);
+                    controller.setGridParams(fileController.getK(), fileController.getM());
+                    int n = fileController.getN();
+                    controller.setLevelsCount(n);
+                    legendController.setLevelsCount(n);
+                    legendController.setGridParams(2, controller.getLevelsCount());
+                    ArrayList<Color> colorsList = fileController.getColorsList();
+                    controller.setColorsList(colorsList);
+                    legendController.setColorsList(colorsList);
+                    functionViewPanel.setIsolinesColor(fileController.getIsolinesColor());
+                    updateCondition();
+                }
+            } catch (IOException e1) {
+                String messageText = "Неверный формат файла";
+                JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                        JOptionPane.ERROR_MESSAGE);
+            } catch (OpenFileExeption openFileExeption) {
+                String messageText = "Не удалось открыть файл";
+                JOptionPane.showMessageDialog(null, messageText, "Ошибка",
+                        JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -344,39 +409,7 @@ public class MainWindow extends Window {
                     controller.setDomain(a, b, c, d);
                     legendController.setDomain(legendController.getA(), legendController.getB(), controller.getFunMin(),
                             controller.getFunMax());
-                    if (getToolBarButton("Edit/Grid").isSelected()) {
-                        functionViewPanel.drawGrid();
-                    }
-                    if (getToolBarButton("Edit/Color map").isSelected()) {
-                        functionViewPanel.drawColorFuncMap();
-                    }
-                    if (getToolBarButton("Edit/Isolines").isSelected()) {
-                        try {
-                            functionViewPanel.drawIsolines();
-                        } catch (Exception e1) {
-                            e1.printStackTrace();
-                        }
-                    }
-                    if (getToolBarButton("Edit/Triangle intersection").isSelected()) {
-                        functionViewPanel.setIntersectionTrianPointModeOn(true);
-                        try {
-                            functionViewPanel.drawIsolines();
-                        } catch (Exception e1) {
-                            e1.printStackTrace();
-                        }
-                    }
-                    if (getToolBarButton("Edit/Rectangle intersection").isSelected()) {
-                        functionViewPanel.setIntersectionRectPointModeOn(true);
-                        try {
-                            functionViewPanel.drawIsolines();
-                        } catch (Exception e1) {
-                            e1.printStackTrace();
-                        }
-                    }
-                    if (getToolBarButton("Edit/Interpolate").isSelected()) {
-                        functionViewPanel.drawInterpolateColorMap();
-                    }
-
+                    updateCondition();
                 }
             }
         }

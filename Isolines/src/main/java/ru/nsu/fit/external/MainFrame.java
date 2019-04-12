@@ -1,5 +1,7 @@
 package ru.nsu.fit.external;
 
+import ru.nsu.fit.g16203.voloshina.OpenFileExeption;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseListener;
@@ -218,7 +220,7 @@ public class MainFrame extends JFrame {
         return FileUtils.getSaveFileName(this);
     }
 
-    public File getOpenFileName(String[] extensions, String description) throws IOException {
+    public File getOpenFileName(String[] extensions, String description) throws OpenFileExeption {
         return FileUtils.getOpenFileName(this, extensions, description);
     }
 
