@@ -425,6 +425,14 @@ public class Controller {
         return d;
     }
 
+    public int getK() {
+        return k;
+    }
+
+    public int getM() {
+        return m;
+    }
+
     public double getRealFunctionValue(int u, int v) {
         return function.getFunctionValue(getXFromU(u), getYFromV(v));
     }

@@ -39,6 +39,11 @@ public class MainWindow extends Window {
     public MainWindow() {
         super(630, 650, "FIT_16203_Voloshina_Isolines");
 
+        controller = new Controller(-10, 10, -10, 10, 10, 10,
+                fieldWidth, fieldHeight, new CircleFunction());
+        legendController = new Controller(0, 1, controller.getFunMin(), controller.getFunMax(),
+                2, controller.getLevelsCount(), 50, fieldHeight, new LinearFunction());
+
         statusBar = new StatusBar(font, getWidth());
         customizeMenu();
         customizeToolbar();
@@ -100,13 +105,9 @@ public class MainWindow extends Window {
 
     private void customizeUserArea() {
         userAreaPanel.setLayout(new FlowLayout(FlowLayout.LEADING, 20, 10));
-        controller = new Controller(-10, 10, -10, 10, 10, 10,
-                fieldWidth, fieldHeight, new CircleFunction());
         functionViewPanel = new FunctionViewPanel(controller, controller.getFieldWidth(), controller.getFieldHeight(),
                 new FunctionViewPanelMouseMovingListener());
         functionViewPanel.drawColorFuncMap();
-        legendController = new Controller(0, 1, controller.getFunMin(), controller.getFunMax(),
-                2, controller.getLevelsCount(), 50, fieldHeight, new LinearFunction());
         legendPanel = new FunctionViewPanel(legendController, legendController.getFieldWidth(),
                 legendController.getFieldHeight(), null);
         legendPanel.drawColorFuncMap();
@@ -354,12 +355,12 @@ public class MainWindow extends Window {
 
     class SettingsButtonMouseListener extends MenuElementMouseListener {
 
-        private int curK = 20;
-        private int curM = 20;
-        private double curA = -10;
-        private double curB = 10;
-        private double curC = -10;
-        private double curD = 10;
+        private int curK = controller.getK();
+        private int curM = controller.getM();
+        private double curA = controller.getA();
+        private double curB = controller.getB();
+        private double curC = controller.getC();
+        private double curD = controller.getD();
 
         SettingsButtonMouseListener() {
             super("Edit/Interpolate", statusBar, (MainFrame) locationComponent);
