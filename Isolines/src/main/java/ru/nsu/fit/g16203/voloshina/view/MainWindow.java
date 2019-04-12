@@ -16,6 +16,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class MainWindow extends Window {
 
@@ -33,7 +35,7 @@ public class MainWindow extends Window {
     public MainWindow() {
         super(630, 650, "FIT_16203_Voloshina_Isolines");
 
-        statusBar = new StatusBar(font, getWidth() / 2);
+        statusBar = new StatusBar(font, getWidth());
         customizeMenu();
         customizeToolbar();
         customizeUserArea();
@@ -67,6 +69,8 @@ public class MainWindow extends Window {
                 "interpolation.png", font, new InterpolateButtonMouseListener(), true);
         addMenuItem("Edit/Settings", "Show settings window", KeyEvent.VK_S,
                 "settings.png", font, new SettingsButtonMouseListener(), false);
+        addMenuItem("Edit/Delete user isolines", "Delete user isolines", KeyEvent.VK_D,
+                "eraser.png", font, new EraserButtonMouseListener(), false);
     }
 
     @Override
@@ -80,6 +84,7 @@ public class MainWindow extends Window {
         addToolBarButton("Edit/Triangle intersection");
         addToolBarButton("Edit/Interpolate");
         addToolBarButton("Edit/Settings");
+        addToolBarButton("Edit/Delete user isolines");
 
         getToolBarButton("Edit/Color map").setSelected(true);
     }
@@ -89,20 +94,31 @@ public class MainWindow extends Window {
         add(statusBar.getStatusPanel(), BorderLayout.PAGE_END);
     }
 
-    private void customizeUserArea(){
+    private void customizeUserArea() {
         userAreaPanel.setLayout(new FlowLayout(FlowLayout.LEADING, 20, 10));
         controller = new Controller(-10, 10, -10, 10, 10, 10,
-                fieldWidth, fieldHeight, new HyberbolaFunction());
-        functionViewPanel = new FunctionViewPanel(controller, controller.getFieldWidth(), controller.getFieldHeight());
+                fieldWidth, fieldHeight, new CircleFunction());
+        functionViewPanel = new FunctionViewPanel(controller, controller.getFieldWidth(), controller.getFieldHeight(),
+                new FunctionViewPanelMouseMovingListener());
         functionViewPanel.drawColorFuncMap();
         legendController = new Controller(0, 1, controller.getFunMin(), controller.getFunMax(),
                 2, controller.getLevelsCount(), 50, fieldHeight, new LinearFunction());
         legendPanel = new FunctionViewPanel(legendController, legendController.getFieldWidth(),
-                legendController.getFieldHeight());
+                legendController.getFieldHeight(), null);
         legendPanel.drawColorFuncMap();
         userAreaPanel.add(functionViewPanel);
         userAreaPanel.add(legendPanel);
         add(userAreaPanel);
+    }
+
+    class FunctionViewPanelMouseMovingListener implements FunctionViewPanel.MouseMovingListener {
+
+        @Override
+        public void mouseMoved(double trueFuncValue, double interpolatedFuncValue, int x, int y) {
+            statusBar.setText(x + ", " + y + " | " + new BigDecimal(trueFuncValue)
+                    .setScale(3, RoundingMode.UP).doubleValue() +
+                    " | " + new BigDecimal(interpolatedFuncValue).setScale(3, RoundingMode.UP).doubleValue());
+        }
     }
 
     class OpenButtonMouseListener extends MenuElementMouseListener {
@@ -116,10 +132,10 @@ public class MainWindow extends Window {
         }
     }
 
-    class ExitButtonMouseListener extends MenuElementMouseListener{
+    class ExitButtonMouseListener extends MenuElementMouseListener {
 
         ExitButtonMouseListener() {
-            super("File/Exit", statusBar, (MainFrame)locationComponent);
+            super("File/Exit", statusBar, (MainFrame) locationComponent);
         }
 
         @Override
@@ -130,6 +146,7 @@ public class MainWindow extends Window {
 
     class GridButtonMouseListener extends MenuElementMouseListener {
         private String menuPath;
+
         GridButtonMouseListener() {
             super("Edit/Grid", statusBar, (MainFrame) locationComponent);
             menuPath = "Edit/Grid";
@@ -138,7 +155,7 @@ public class MainWindow extends Window {
         @Override
         public void mousePressed(MouseEvent e) {
             JButton gridToolbarButton = getToolBarButton(menuPath);
-            if(!gridToolbarButton.isSelected()){
+            if (!gridToolbarButton.isSelected()) {
                 gridToolbarButton.setSelected(true);
                 functionViewPanel.drawGrid();
             } else {
@@ -157,7 +174,7 @@ public class MainWindow extends Window {
         public void mousePressed(MouseEvent e) {
             JButton colorMapButton = getToolBarButton("Edit/Color map");
             JButton interpolationToolbarButton = getToolBarButton("Edit/Interpolate");
-            if(!colorMapButton.isSelected()){
+            if (!colorMapButton.isSelected()) {
                 colorMapButton.setSelected(true);
                 interpolationToolbarButton.setSelected(false);
                 functionViewPanel.drawColorFuncMap();
@@ -180,7 +197,7 @@ public class MainWindow extends Window {
         public void mousePressed(MouseEvent e) {
             JButton isolinesToolbarButton = getToolBarButton("Edit/Isolines");
             try {
-                if(!isolinesToolbarButton.isSelected()){
+                if (!isolinesToolbarButton.isSelected()) {
                     isolinesToolbarButton.setSelected(true);
                     functionViewPanel.setIsolinesModeOn(true);
                     functionViewPanel.drawIsolines();
@@ -203,11 +220,9 @@ public class MainWindow extends Window {
         @Override
         public void mousePressed(MouseEvent e) {
             JButton intersectionToolbarButton = getToolBarButton("Edit/Triangle intersection");
-            JButton isolinesToolbarButton = getToolBarButton("Edit/Isolines");
             try {
-                if(!intersectionToolbarButton.isSelected()){
+                if (!intersectionToolbarButton.isSelected()) {
                     intersectionToolbarButton.setSelected(true);
-                    //isolinesToolbarButton.setSelected(true);
                     functionViewPanel.setIntersectionTrianPointModeOn(true);
                     functionViewPanel.drawIsolines();
                 } else {
@@ -229,11 +244,9 @@ public class MainWindow extends Window {
         @Override
         public void mousePressed(MouseEvent e) {
             JButton intersectionToolbarButton = getToolBarButton("Edit/Rectangle intersection");
-            JButton isolinesToolbarButton = getToolBarButton("Edit/Isolines");
             try {
-                if(!intersectionToolbarButton.isSelected()){
+                if (!intersectionToolbarButton.isSelected()) {
                     intersectionToolbarButton.setSelected(true);
-                    //isolinesToolbarButton.setSelected(true);
                     functionViewPanel.setIntersectionRectPointModeOn(true);
                     functionViewPanel.drawIsolines();
                 } else {
@@ -257,7 +270,7 @@ public class MainWindow extends Window {
             JButton interpolationToolbarButton = getToolBarButton("Edit/Interpolate");
             JButton colorMapButton = getToolBarButton("Edit/Color map");
             try {
-                if(!interpolationToolbarButton.isSelected()){
+                if (!interpolationToolbarButton.isSelected()) {
                     interpolationToolbarButton.setSelected(true);
                     colorMapButton.setSelected(false);
                     functionViewPanel.drawInterpolateColorMap();
@@ -308,7 +321,7 @@ public class MainWindow extends Window {
 
             private SettingsDialog dialog;
 
-            public OnOkListener(SettingsDialog dialog) {
+            OnOkListener(SettingsDialog dialog) {
                 this.dialog = dialog;
             }
 
@@ -321,16 +334,6 @@ public class MainWindow extends Window {
                 Double c = dialog.getC();
                 Double d = dialog.getD();
                 if (k != null && m != null && a != null && b != null && c != null && d != null) {
-//                    System.out.println("k = " + k);
-//                    System.out.println("m = " + m);
-//                    System.out.println("a = " + a);
-//                    System.out.println("b = " + b);
-//                    System.out.println("c = " + c);
-//                    System.out.println("d = " + d);
-//                    System.out.println("fmin = " + controller.getFunMin());
-//                    System.out.println("fmax = " + controller.getFunMax());
-//                    System.out.println();
-
                     curK = k;
                     curM = m;
                     curA = a;
@@ -375,6 +378,22 @@ public class MainWindow extends Window {
                     }
 
                 }
+            }
+        }
+    }
+
+    class EraserButtonMouseListener extends MenuElementMouseListener {
+        EraserButtonMouseListener() {
+            super("Edit/Delete user isolines",
+                    statusBar, (MainFrame) locationComponent);
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            try {
+                functionViewPanel.deleteUserIsolines();
+            } catch (Exception e1) {
+                e1.printStackTrace();
             }
         }
     }

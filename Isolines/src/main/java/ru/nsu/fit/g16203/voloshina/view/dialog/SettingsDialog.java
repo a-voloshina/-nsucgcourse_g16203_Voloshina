@@ -76,7 +76,8 @@ public class SettingsDialog extends JDialog {
             if (Math.abs(value) <= valueMax) {
                 return value;
             } else {
-                String messageText = "Введенное значение больше максимально возможного ):";
+                String messageText = "Введенное значение больше максимально возможного. " +
+                        "Будет установлено максимально возможное значение";
                 JOptionPane.showMessageDialog(null, messageText, "Ошибка",
                         JOptionPane.ERROR_MESSAGE);
                 return valueMax;
@@ -93,9 +94,10 @@ public class SettingsDialog extends JDialog {
         try {
             double param = Double.parseDouble(parameterTextField.getText());
             if (Math.abs(param) <= max) {
-                return new BigDecimal(param).setScale(1, RoundingMode.UP).doubleValue();
+                return new BigDecimal(param).setScale(2, RoundingMode.UP).doubleValue();
             } else {
-                String messageText = "Введенное значение больше максимально возможного ):";
+                String messageText = "Введенное значение больше максимально возможного. " +
+                        "Будет установлено максимально возможное значение";
                 JOptionPane.showMessageDialog(null, messageText, "Ошибка",
                         JOptionPane.ERROR_MESSAGE);
                 return max;

@@ -1,9 +1,14 @@
 package ru.nsu.fit.g16203.voloshina.view;
 
 import ru.nsu.fit.g16203.voloshina.controller.Controller;
+import ru.nsu.fit.g16203.voloshina.general.Pair;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 
 public class FunctionViewPanel extends JPanel {
@@ -24,7 +29,7 @@ public class FunctionViewPanel extends JPanel {
         void drawPoint(int x, int y, Color fillColor);
     }
 
-    public FunctionViewPanel(Controller controller, int width, int height) {
+    public FunctionViewPanel(Controller controller, int width, int height, MouseMovingListener mouseMovingListener) {
         this.controller = controller;
         setSize(width, height);
         setPreferredSize(new Dimension(width, height));
@@ -33,6 +38,64 @@ public class FunctionViewPanel extends JPanel {
         gridImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         isolinesImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         pointsImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        FunctionViewPanel functionViewPanel = this;
+        Pair<Integer, Integer> lastCursorPosition = new Pair<>(0, 0);
+
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                int x = e.getX();
+                int y = e.getY();
+                if (x < getWidth() && y < getHeight() && x >= 0 && y >= 0) {
+                    try {
+                        controller.drawUserIsoline(x, y, functionViewPanel::drawIsoine, functionViewPanel::drawPoint);
+                        repaint();
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        });
+
+        addMouseMotionListener(new MouseMotionListener() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                int x = e.getX();
+                int y = e.getY();
+                if (x < getWidth() && y < getHeight() && x >= 0 && y >= 0) {
+                    try {
+                        controller.deleteUserIsoline(lastCursorPosition.getKey(), lastCursorPosition.getValue());
+                        controller.drawUserIsoline(x, y, functionViewPanel::drawIsoine, functionViewPanel::drawPoint);
+                        lastCursorPosition.setKey(x);
+                        lastCursorPosition.setValue(y);
+                        drawIsolines();
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                if (mouseMovingListener != null) {
+                    int x = e.getX();
+                    int y = e.getY();
+                    if (x < getWidth() && y < getHeight() && x >= 0 && y >= 0) {
+                        mouseMovingListener.mouseMoved(controller.getRealFunctionValue(x, y),
+                                controller.getInterpolateFunctionValue(x, y), x, y);
+                    }
+                }
+            }
+        });
+    }
+
+    public void deleteUserIsolines() {
+        controller.deleteUserIsolines();
+        try {
+            drawIsolines();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -122,7 +185,6 @@ public class FunctionViewPanel extends JPanel {
                 functionMapImage.setRGB(j, i, controller.getPixelColor(j, i).getRGB());
             }
         }
-        System.out.println("draw color map");
         repaint();
     }
 
@@ -139,7 +201,6 @@ public class FunctionViewPanel extends JPanel {
                 functionMapImage.setRGB(j, i, controller.getInterpolatedPixelColor(j, i).getRGB());
             }
         }
-        System.out.println("draw interpolated color map");
         repaint();
     }
 
@@ -147,7 +208,6 @@ public class FunctionViewPanel extends JPanel {
         isolinesImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
         pointsImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
         controller.drawIsolines(this::drawIsoine, this::drawPoint);
-        System.out.println("draw isolines");
         repaint();
     }
 
@@ -164,6 +224,10 @@ public class FunctionViewPanel extends JPanel {
     public void hideIsolines(){
         isolinesImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
         repaint();
+    }
+
+    public interface MouseMovingListener {
+        void mouseMoved(double trueFuncValue, double interpolatedFuncValue, int x, int y);
     }
 
     public void setIntersectionRectPointModeOn(boolean intersectionRectPointModeOn) {
