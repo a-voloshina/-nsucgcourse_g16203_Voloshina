@@ -27,12 +27,6 @@ public class SettingsDialog extends JDialog {
         getRootPane().setDefaultButton(buttonOK);
         setTitle("Set parameters");
 
-        buttonOK.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                onOK();
-            }
-        });
-
         buttonCancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onCancel();
@@ -58,11 +52,6 @@ public class SettingsDialog extends JDialog {
         dialog.pack();
         dialog.setVisible(true);
         System.exit(0);
-    }
-
-    private void onOK() {
-        // add your code here
-        dispose();
     }
 
     private void onCancel() {

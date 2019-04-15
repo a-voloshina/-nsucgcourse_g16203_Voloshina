@@ -440,6 +440,8 @@ public class Controller {
         this.b = b;
         this.c = c;
         this.d = d;
+        gridXSize = (b - a) / k;
+        gridYSize = (d - c) / m;
         countFunctionMinMax();
         initializeLevelsList();
     }

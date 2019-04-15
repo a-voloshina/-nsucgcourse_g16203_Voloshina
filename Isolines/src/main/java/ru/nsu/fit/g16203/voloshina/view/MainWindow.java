@@ -394,13 +394,6 @@ public class MainWindow extends Window {
 
     class SettingsButtonMouseListener extends MenuElementMouseListener {
 
-        private int curK = controller.getK();
-        private int curM = controller.getM();
-        private double curA = controller.getA();
-        private double curB = controller.getB();
-        private double curC = controller.getC();
-        private double curD = controller.getD();
-
         SettingsButtonMouseListener() {
             super("Edit/Interpolate", statusBar, (MainFrame) locationComponent);
         }
@@ -408,6 +401,12 @@ public class MainWindow extends Window {
         @Override
         public void mousePressed(MouseEvent e) {
             SettingsDialog settingsDialog = new SettingsDialog();
+            int curK = controller.getK();
+            int curM = controller.getM();
+            double curA = controller.getA();
+            double curB = controller.getB();
+            double curC = controller.getC();
+            double curD = controller.getD();
             settingsDialog.setK(curK);
             settingsDialog.setM(curM);
             settingsDialog.setA(curA);
@@ -439,17 +438,12 @@ public class MainWindow extends Window {
                 Double c = dialog.getC();
                 Double d = dialog.getD();
                 if (k != null && m != null && a != null && b != null && c != null && d != null) {
-                    curK = k;
-                    curM = m;
-                    curA = a;
-                    curB = b;
-                    curC = c;
-                    curD = d;
                     controller.setGridParams(k, m);
                     controller.setDomain(a, b, c, d);
                     legendController.setDomain(legendController.getA(), legendController.getB(), controller.getFunMin(),
                             controller.getFunMax());
                     updateCondition();
+                    dialog.dispose();
                 }
             }
         }
