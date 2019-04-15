@@ -23,7 +23,6 @@ public class FileController implements IFileController {
 
     private void getKM(BufferedReader buf) throws IOException {
         String line = buf.readLine();
-        System.out.println(line);
         String[] splitLine = line.split(" ");
         k = Integer.parseInt(splitLine[0]);
         m = Integer.parseInt(splitLine[1]);
@@ -43,7 +42,6 @@ public class FileController implements IFileController {
             if (line.equals("")) {
                 continue;
             }
-            System.out.println(line);
             String[] colors = line.split(" ");
             if (colors.length < 3) {
                 throw new IOException("Illegal file format");
@@ -57,7 +55,6 @@ public class FileController implements IFileController {
 
     private void getIsolinesColor(BufferedReader buf) throws IOException {
         String line = parseComments(buf.readLine());
-        System.out.println(line);
         String[] colors = line.split(" ");
         if (colors.length < 3) {
             throw new IOException("Illegal file format");
@@ -70,7 +67,6 @@ public class FileController implements IFileController {
 
     private int getInt(BufferedReader buf) throws IOException {
         String line = buf.readLine();
-        System.out.println(line);
         int spacesStartIndex = line.indexOf(" ");
         if (spacesStartIndex > 0) {
             line = line.substring(0, spacesStartIndex);

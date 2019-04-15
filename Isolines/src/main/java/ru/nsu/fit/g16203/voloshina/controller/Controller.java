@@ -367,7 +367,6 @@ public class Controller {
         double z = getInterpolateFunctionValue(u, v);
         drawIsoline(z, painter, pointPainter);
         usersLevelsList.add(z);
-        System.out.println("added " + z);
     }
 
     public void deleteUserIsolines() {
@@ -377,7 +376,6 @@ public class Controller {
     public void deleteUserIsoline(int u, int v) {
         double z = getInterpolateFunctionValue(u, v);
         usersLevelsList.remove(z);
-        System.out.println("removed " + z);
     }
 
     public int getFieldWidth() {
@@ -394,10 +392,6 @@ public class Controller {
 
     public void setFieldHeight(int fieldHeight) {
         this.fieldHeight = fieldHeight;
-    }
-
-    public int getColorsCount() {
-        return n + 1;
     }
 
     public int getLevelsCount() {
@@ -470,6 +464,10 @@ public class Controller {
     public void setColorsList(ArrayList<Color> colorsList) {
         this.colorsList = colorsList;
         initializeLevelsList();
+    }
+
+    public ArrayList<Double> getLevelsList() {
+        return levelsList;
     }
 
     public void setIntersectionRectPointModeOn(boolean intersectionRectPointModeOn) {

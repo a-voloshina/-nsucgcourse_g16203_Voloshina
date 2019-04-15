@@ -4,10 +4,12 @@ import ru.nsu.fit.external.MainFrame;
 import ru.nsu.fit.g16203.voloshina.OpenFileExeption;
 import ru.nsu.fit.g16203.voloshina.controller.Controller;
 import ru.nsu.fit.g16203.voloshina.controller.FileController;
+import ru.nsu.fit.g16203.voloshina.controller.IFileController;
 import ru.nsu.fit.g16203.voloshina.general.MenuElementMouseListener;
 import ru.nsu.fit.g16203.voloshina.general.StatusBar;
 import ru.nsu.fit.g16203.voloshina.general.Window;
 import ru.nsu.fit.g16203.voloshina.model.CircleFunction;
+import ru.nsu.fit.g16203.voloshina.model.HyberbolaFunction;
 import ru.nsu.fit.g16203.voloshina.model.LinearFunction;
 import ru.nsu.fit.g16203.voloshina.view.dialog.SettingsDialog;
 
@@ -28,23 +30,56 @@ public class MainWindow extends Window {
     private StatusBar statusBar;
     private FunctionViewPanel functionViewPanel;
     private FunctionViewPanel legendPanel;
-    private JPanel userAreaPanel = new JPanel();
+    private LevelsViewPanel levelsViewPanel;
+    private JPanel userAreaPanel;
 
     private int fieldWidth = 500;
     private int fieldHeight = 500;
+    private int legendWidth = 50;
+    private int widthOffset = 20;
+    private int heightOffset = 10;
 
     private Controller controller;
     private Controller legendController;
 
     public MainWindow() {
-        super(630, 650, "FIT_16203_Voloshina_Isolines");
+        super(696, 650, "FIT_16203_Voloshina_Isolines");
 
-        controller = new Controller(-10, 10, -10, 10, 10, 10,
-                fieldWidth, fieldHeight, new CircleFunction());
+        controller = new Controller(-5, 5, -5, 5, 50, 50,
+                fieldWidth, fieldHeight, new HyberbolaFunction());
         legendController = new Controller(0, 1, controller.getFunMin(), controller.getFunMax(),
-                2, controller.getLevelsCount(), 50, fieldHeight, new LinearFunction());
+                1, controller.getLevelsCount(), 50, fieldHeight, new LinearFunction());
 
         statusBar = new StatusBar(font, getWidth());
+        userAreaPanel = new JPanel() {
+            @Override
+            public void setBounds(int x, int y, int width, int height) {
+                super.setBounds(x, y, width, height);
+                int newFieldWidth = width - 4 * widthOffset - 2 * legendWidth;
+                fieldWidth = newFieldWidth > 0 ? newFieldWidth : fieldWidth;
+                int newFieldHeight = height - 2 * heightOffset;
+                fieldHeight = newFieldHeight > 0 ? newFieldHeight : fieldHeight;
+                Point functionViewLocation = functionViewPanel.getLocation();
+                Point legendViewLocation = legendPanel.getLocation();
+                Point levelsPanelLocation = levelsViewPanel.getLocation();
+
+                functionViewPanel.setBounds(functionViewLocation.x, functionViewLocation.y, fieldWidth, fieldHeight);
+                functionViewPanel.setPreferredSize(new Dimension(fieldWidth, fieldHeight));
+                controller.setFieldWidth(fieldWidth);
+                controller.setFieldHeight(fieldHeight);
+
+                legendPanel.setBounds(legendViewLocation.x, legendViewLocation.y, legendWidth, fieldHeight);
+                legendPanel.setPreferredSize(new Dimension(legendWidth, fieldHeight));
+                legendController.setFieldWidth(legendWidth);
+                legendController.setFieldHeight(fieldHeight);
+                legendPanel.drawColorFuncMap();
+
+                levelsViewPanel.setBounds(levelsPanelLocation.x, levelsPanelLocation.y, legendWidth, fieldHeight);
+                levelsViewPanel.printLevels(controller.getLevelsList());
+                levelsViewPanel.setPreferredSize(new Dimension(legendWidth, fieldHeight));
+                updateCondition();
+            }
+        };
         customizeMenu();
         customizeToolbar();
         customizeUserArea();
@@ -52,6 +87,7 @@ public class MainWindow extends Window {
 
         locationComponent = this;
         setLocationRelativeTo(null);
+        setMinimumSize(new Dimension(500, 500));
         setVisible(true);
     }
 
@@ -104,15 +140,18 @@ public class MainWindow extends Window {
     }
 
     private void customizeUserArea() {
-        userAreaPanel.setLayout(new FlowLayout(FlowLayout.LEADING, 20, 10));
+        userAreaPanel.setLayout(new FlowLayout(FlowLayout.LEADING, widthOffset, heightOffset));
         functionViewPanel = new FunctionViewPanel(controller, controller.getFieldWidth(), controller.getFieldHeight(),
                 new FunctionViewPanelMouseMovingListener());
         functionViewPanel.drawColorFuncMap();
         legendPanel = new FunctionViewPanel(legendController, legendController.getFieldWidth(),
                 legendController.getFieldHeight(), null);
         legendPanel.drawColorFuncMap();
+        levelsViewPanel = new LevelsViewPanel(legendController.getFieldWidth(), legendController.getFieldHeight(), font);
+        levelsViewPanel.printLevels(controller.getLevelsList());
         userAreaPanel.add(functionViewPanel);
         userAreaPanel.add(legendPanel);
+        userAreaPanel.add(levelsViewPanel);
         add(userAreaPanel);
     }
 
@@ -173,13 +212,13 @@ public class MainWindow extends Window {
             try {
                 File configFile = getOpenFileName(new String[]{"txt"}, "Text config format");
                 if (configFile != null) {
-                    FileController fileController = new FileController();
+                    IFileController fileController = new FileController();
                     fileController.parseFile(configFile);
                     controller.setGridParams(fileController.getK(), fileController.getM());
                     int n = fileController.getN();
                     controller.setLevelsCount(n);
                     legendController.setLevelsCount(n);
-                    legendController.setGridParams(2, controller.getLevelsCount());
+                    legendController.setGridParams(1, controller.getLevelsCount());
                     ArrayList<Color> colorsList = fileController.getColorsList();
                     controller.setColorsList(colorsList);
                     legendController.setColorsList(colorsList);

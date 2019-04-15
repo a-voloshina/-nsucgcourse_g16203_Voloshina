@@ -2,7 +2,6 @@ package ru.nsu.fit.g16203.voloshina.controller;
 
 import java.awt.*;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 
