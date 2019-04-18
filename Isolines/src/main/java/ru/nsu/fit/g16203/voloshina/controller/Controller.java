@@ -24,6 +24,7 @@ public class Controller {
     }};
     private ArrayList<Double> levelsList;
     private ArrayList<Double> usersLevelsList;
+    private ArrayList<Double> interpolatedLevelsList;
     private int k;
     private int m;
     private double gridXSize;
@@ -55,6 +56,7 @@ public class Controller {
 
         countFunctionMinMax();
         initializeLevelsList();
+        initializeInterpolatedLevelsList();
     }
 
     private void countFunctionMinMax() {
@@ -83,6 +85,22 @@ public class Controller {
         }
     }
 
+    private void initializeInterpolatedLevelsList() {
+        System.out.println("min = " + funMin);
+        System.out.println("max = " + funMax);
+        interpolatedLevelsList = new ArrayList<>();
+        double step = (funMax - funMin) / n;
+        for (int i = 0; i < n; i++) {
+            interpolatedLevelsList.add(i * step + funMin);
+        }
+        interpolatedLevelsList.add(funMax);
+
+        for (int i = 0; i <= n; i++) {
+            System.out.println(interpolatedLevelsList.get(i));
+        }
+        System.out.println();
+    }
+
     private Color getAppropriateColor(double z) {
         for (int i = 0; i < n; ++i) {
             if (z < levelsList.get(i)) {
@@ -90,6 +108,24 @@ public class Controller {
             }
         }
         return colorsList.get(n);
+    }
+
+    private Color getAppropriateInterpolatedColor(double z) {
+        int j = n - 1;
+        for (int i = 0; i < n - 1; ++i) {
+            if (z <= interpolatedLevelsList.get(i + 1)) {
+                j = i;
+                break;
+            }
+        }
+        Color colorj = colorsList.get(j);
+        Color colorj1 = colorsList.get(j + 1);
+        double fj = interpolatedLevelsList.get(j);
+        double fj1 = interpolatedLevelsList.get(j + 1);
+        double newRed = linearInterpolation(fj, fj1, z, colorj.getRed(), colorj1.getRed());
+        double newGreen = linearInterpolation(fj, fj1, z, colorj.getGreen(), colorj1.getGreen());
+        double newBlue = linearInterpolation(fj, fj1, z, colorj.getBlue(), colorj1.getBlue());
+        return new Color(saturate(newRed), saturate(newGreen), saturate(newBlue));
     }
 
     private int getUFromX(double x) {
@@ -134,6 +170,11 @@ public class Controller {
         double f12 = alphaX * f2 + (1 - alphaX) * f1;
         double alphaY = (y - y12) / (y34 - y12);
         return alphaY * f34 + (1 - alphaY) * f12;
+    }
+
+    private double linearInterpolation(double f1, double f2, double f, double x1, double x2) {
+        double alpha = (f - f1) / (f2 - f1);
+        return alpha * x2 + (1 - alpha) * x1;
     }
 
     private void drawIsoline(double z, FunctionViewPanel.LinePainter painter,
@@ -310,7 +351,37 @@ public class Controller {
     }
 
     public Color getPixelColor(int u, int v) {
-        return getAppropriateColor(getInterpolateFuncValue(u, v));
+        //return getAppropriateColor(getInterpolateFuncValue(u, v));
+        return getAppropriateColor(getRealFunctionValue(u, v));
+    }
+
+    public Color getInterpolatedPixelColor(int u, int v) {
+        double x = getXFromU(u);
+        double y = getYFromV(v);
+//
+//        int gridCellXNumber = (int) ((x - a) / gridXSize);
+//        int gridCellYNumber = (int) ((y - c) / gridYSize);
+//        double x13 = gridXSize * gridCellXNumber + a;
+//        double x24 = gridXSize * (gridCellXNumber + 1) + a;
+//        double y12 = gridYSize * gridCellYNumber + c;
+//        double y34 = gridYSize * (gridCellYNumber + 1) + c;
+//
+//        double f1 = function.getFunctionValue(x13, y12);
+//        double f2 = function.getFunctionValue(x24, y12);
+//        double f3 = function.getFunctionValue(x13, y34);
+//        double f4 = function.getFunctionValue(x24, y34);
+//        Color color1 = getAppropriateColor(f1);
+//        Color color2 = getAppropriateColor(f2);
+//        Color color3 = getAppropriateColor(f3);
+//        Color color4 = getAppropriateColor(f4);
+//        int newRed = saturate(bilinearlInterpolation(color1.getRed(), color2.getRed(), color3.getRed(),
+//                color4.getRed(), x13, x24, y12, y34, x, y));
+//        int newGreen = saturate(bilinearlInterpolation(color1.getGreen(), color2.getGreen(), color3.getGreen(),
+//                color4.getGreen(), x13, x24, y12, y34, x, y));
+//        int newBlue = saturate(bilinearlInterpolation(color1.getBlue(), color2.getBlue(), color3.getBlue(),
+//                color4.getBlue(), x13, x24, y12, y34, x, y));
+//        return new Color(newRed, newGreen, newBlue);
+        return getAppropriateInterpolatedColor(function.getFunctionValue(x, y));
     }
 
     public void drawIsolines(FunctionViewPanel.LinePainter painter,
@@ -321,34 +392,6 @@ public class Controller {
             double z = generalLevelsList.get(l);
             drawIsoline(z, painter, pointPainter);
         }
-    }
-
-    public Color getInterpolatedPixelColor(int u, int v) {
-        double x = getXFromU(u);
-        double y = getYFromV(v);
-
-        int gridCellXNumber = (int) ((x - a) / gridXSize);
-        int gridCellYNumber = (int) ((y - c) / gridYSize);
-        double x13 = gridXSize * gridCellXNumber + a;
-        double x24 = gridXSize * (gridCellXNumber + 1) + a;
-        double y12 = gridYSize * gridCellYNumber + c;
-        double y34 = gridYSize * (gridCellYNumber + 1) + c;
-
-        double f1 = function.getFunctionValue(x13, y12);
-        double f2 = function.getFunctionValue(x24, y12);
-        double f3 = function.getFunctionValue(x13, y34);
-        double f4 = function.getFunctionValue(x24, y34);
-        Color color1 = getAppropriateColor(f1);
-        Color color2 = getAppropriateColor(f2);
-        Color color3 = getAppropriateColor(f3);
-        Color color4 = getAppropriateColor(f4);
-        int newRed = saturate(bilinearlInterpolation(color1.getRed(), color2.getRed(), color3.getRed(),
-                color4.getRed(), x13, x24, y12, y34, x, y));
-        int newGreen = saturate(bilinearlInterpolation(color1.getGreen(), color2.getGreen(), color3.getGreen(),
-                color4.getGreen(), x13, x24, y12, y34, x, y));
-        int newBlue = saturate(bilinearlInterpolation(color1.getBlue(), color2.getBlue(), color3.getBlue(),
-                color4.getBlue(), x13, x24, y12, y34, x, y));
-        return new Color(newRed, newGreen, newBlue);
     }
 
     public void drawGrid(FunctionViewPanel.LinePainter painter) {
@@ -401,6 +444,7 @@ public class Controller {
     public void setLevelsCount(int n) {
         this.n = n;
         initializeLevelsList();
+        initializeInterpolatedLevelsList();
     }
 
     public double getA() {
@@ -444,6 +488,7 @@ public class Controller {
         gridYSize = (d - c) / m;
         countFunctionMinMax();
         initializeLevelsList();
+        initializeInterpolatedLevelsList();
     }
 
     public void setGridParams(int k, int m) {
@@ -453,6 +498,7 @@ public class Controller {
         gridYSize = (d - c) / m;
         countFunctionMinMax();
         initializeLevelsList();
+        initializeInterpolatedLevelsList();
     }
 
     public double getFunMin() {
@@ -466,6 +512,7 @@ public class Controller {
     public void setColorsList(ArrayList<Color> colorsList) {
         this.colorsList = colorsList;
         initializeLevelsList();
+        initializeInterpolatedLevelsList();
     }
 
     public ArrayList<Double> getLevelsList() {
